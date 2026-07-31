@@ -91,6 +91,29 @@ hides.
 the placeholder — S4 in the plan. The writer is reachable from tests and from the
 bake-off harness, not from the browser.
 
+## 2026-07-31 (later still) — Claude sign-in, and LIVE
+
+**Live at https://talltrack.everyai-com.workers.dev** (Worker version
+`f6de7ee6`). Health returns `{"ok":true}` with all three bindings wired;
+migrations 0001-0003 applied to remote D1.
+
+**Sign in with your own Claude.** Accepts the credential `claude setup-token`
+mints — the same command and the same `sk-ant-oat01-` token AIOS uses, billing
+the person's own subscription. Verified against Anthropic before storage,
+envelope-encrypted at rest, only the last four characters ever reach a screen.
+
+**Not the container capture AIOS uses.** AIOS drives the CLI inside a Sandbox
+and scrapes the token off a rendered PTY; that needs a 539-line Python wrapper,
+a container image, a Durable Object and a wrapper-hash handshake. TallTrack has
+the person run the command and paste the result. Both produce the identical
+credential, so `src/providers/claude-credential.ts` is the only file that
+changes if the container flow is added later. The real cost is a trip to a
+terminal — see `docs/DECISIONS.md`.
+
+**48 tests, `npm run check` green.** Verified end to end in the browser against
+the deployed Worker: a bad paste returns 400 and renders a human message, no
+console errors.
+
 ## Owed
 
 - [ ] GitHub remote (blocked on `gh auth login`)
