@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Connect, type Connection } from './Connect'
+import { Notetakers, type NotetakerConnection } from './Notetakers'
 
 type Health = { ok: boolean; service: string; bindings: Record<string, boolean> }
 
@@ -12,6 +13,7 @@ export function App() {
   const [health, setHealth] = useState<Health | null>(null)
   const [reachable, setReachable] = useState<boolean | null>(null)
   const [claude, setClaude] = useState<Connection | null>(null)
+  const [notetakers, setNotetakers] = useState<NotetakerConnection[]>([])
 
   useEffect(() => {
     fetch('/api/health')
@@ -26,6 +28,11 @@ export function App() {
       .then((r) => r.json() as Promise<{ connections: Connection[] }>)
       .then((d) => setClaude(d.connections.find((c) => c.engine === 'claude') ?? null))
       .catch(() => setClaude(null))
+
+    fetch('/api/notetakers')
+      .then((r) => r.json() as Promise<{ notetakers: NotetakerConnection[] }>)
+      .then((d) => setNotetakers(d.notetakers))
+      .catch(() => setNotetakers([]))
   }, [])
 
   return (
@@ -42,10 +49,7 @@ export function App() {
 
       <Connect connection={claude} onConnected={setClaude} />
 
-      <div className="card">
-        <h2>Connect your calls</h2>
-        <p>Fathom first, then Gong and Fireflies. Not built yet.</p>
-      </div>
+      <Notetakers connections={notetakers} onChange={setNotetakers} />
 
       <p className="status">
         <span className={`dot${health?.ok ? ' ok' : ''}`} />

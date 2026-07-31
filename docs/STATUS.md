@@ -135,6 +135,20 @@ quietly stops — which reads as "it broke", not "sign in again".
 authorize URL has the right client, `code=true` and an S256 challenge; expired
 and unknown sign-ins each return their own human message; no console errors.
 
+## 2026-07-31 (notetakers) — Fathom / Gong / Fireflies one-click connect, live
+
+Worker version `822e913e`. All three notetakers connect through Composio's
+hosted sign-in, reusing callcraft's API key and auth configs (now Worker
+secrets). One click opens `connect.composio.dev`, the page polls until the
+exact account reports ACTIVE, pending rows survive a refresh. Verified live:
+all three mint real links, unknown providers 404, poll returns PENDING, delete
+cleans up. 56 tests, `npm run check` green, no console errors.
+
+Ported the three production-learned gotchas with their comments: the
+fathom.video proxy-domain rule, the proxy's 200-with-inner-error shape, and
+exact-account matching on status polls. Gong/Fireflies are connect-only until
+their read paths land (S1).
+
 ## Owed
 
 - [ ] GitHub remote (blocked on `gh auth login`)

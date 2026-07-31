@@ -201,3 +201,43 @@ not by a cron nobody notices has stopped.
 **Popup blockers.** `window.open` can be silently blocked, which would leave the
 person holding a paste box and no tab to paste from. The authorize URL is kept in
 state and offered as a plain link.
+
+---
+
+## 2026-07-31 — Notetakers connect through Composio, on callcraft's auth configs
+
+**Decision:** Fathom, Gong and Fireflies connect via Composio's hosted sign-in.
+One click mints a `connect.composio.dev` link; the person approves in the
+provider's own UI; we poll Composio until the exact account reports ACTIVE. The
+Composio API key and all three auth-config ids are **reused from callcraft** —
+same master account, same toolkit configs, set as Worker secrets.
+
+**Why Composio rather than direct OAuth per provider:** the provider credential
+never touches our code. Composio vaults it and injects it at request time
+through their proxy; we store only an opaque connected-account id. Three
+providers' worth of OAuth apps, token refresh and key storage collapse into one
+integration that callcraft already proved in production.
+
+**Three ported gotchas that each cost callcraft real time:**
+1. **`fathom.video`, not `api.fathom.ai`.** Composio's proxy enforces
+   same-registrable-domain with the toolkit's base URL; the documented API host
+   400s at the proxy. Every callcraft poll silently failed for a day
+   (relearned 2026-07-21) before this was found.
+2. **The proxy returns 200 when the provider errored** — the provider's status
+   rides inside the body. Without checking it, a 404 "succeeds".
+3. **Match the exact account id AND auth config when polling.** The list
+   endpoint can return other accounts; taking the first item shows a green tick
+   for an approval that never happened.
+
+**Pending rows are written before the redirect,** because the approval finishes
+in another tab. If the connected-account id lived only in a browser variable, a
+refresh mid-approval would strand an account Composio considers live.
+
+**Accepted trade:** reusing callcraft's Composio account means both products
+share one vault and one billing relationship. Fine at this scale; split it if
+TallTrack gets its own Composio org later — the auth-config ids are the only
+thing that would change.
+
+**Gong and Fireflies are connect-only today:** the sign-in works end to end, but
+`listCalls`/`fetchTranscript` are Fathom-only and say so plainly rather than
+pretending. The read path lands with S1 for each provider.
