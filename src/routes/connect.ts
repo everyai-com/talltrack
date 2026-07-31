@@ -1,63 +1,71 @@
 import { Hono } from 'hono'
 import type { Env } from '../index'
-import { CredentialError, claudeAuthHeaders, parseClaudeCredential } from '../providers/claude-credential'
+import {
+  AUTH_TTL_SECONDS,
+  finishClaudeAuth,
+  OAuthError,
+  startClaudeAuth,
+  type PendingAuth,
+} from '../providers/claude-oauth'
 import { disconnect, listConnections, saveConnection } from '../db/providers'
 import { workspaceOf } from '../auth'
 
 export const connect = new Hono<{ Bindings: Env }>()
 
-/**
- * The whole point of validating before storing: a token that was mistyped, or
- * already expired, or minted for a different account, should fail here — on the
- * screen where the person can fix it — rather than silently at 6am on the first
- * real run, when nothing is watching and the only symptom is an empty week.
- */
-async function verifyClaude(secret: string, kind: 'subscription' | 'api_key'): Promise<void> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'anthropic-version': '2023-06-01',
-      ...claudeAuthHeaders({ kind, secret }),
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1,
-      messages: [{ role: 'user', content: 'hi' }],
-    }),
-  })
+const PENDING_PREFIX = 'claude-auth:'
 
-  if (res.ok) return
-  if (res.status === 401 || res.status === 403)
-    throw new CredentialError(
-      kind === 'subscription'
-        ? "Claude didn't accept that token. They expire — run the command again and paste the new one."
-        : "Claude didn't accept that key. Check it's the whole thing and still active.",
-    )
-  if (res.status === 429)
-    throw new CredentialError('Your Claude account is rate limited right now. Try connecting again in a few minutes.')
-  throw new CredentialError("Couldn't reach Claude to check that token. Nothing was saved — try again.")
+/** Opaque, server-issued, and shape-checked before it is ever used as a key. */
+function isAuthId(value: unknown): value is string {
+  return typeof value === 'string' && /^cauth-[A-Za-z0-9_-]{20,24}$/.test(value)
 }
 
 connect.get('/', async (c) => {
-  const workspaceId = workspaceOf(c.req.raw)
-  return c.json({ connections: await listConnections(c.env, workspaceId) })
+  return c.json({ connections: await listConnections(c.env, workspaceOf(c.req.raw)) })
 })
 
-connect.post('/claude', async (c) => {
+/**
+ * Step one: mint a PKCE challenge and hand back the URL to open.
+ *
+ * The verifier stays in KV under a server-issued id. If it went to the browser
+ * — even briefly, even in a variable — PKCE would degrade to a plain redirect
+ * that anyone holding the code could complete.
+ */
+connect.post('/claude/start', async (c) => {
+  const { authId, authorizeUrl, pending } = await startClaudeAuth()
+  await c.env.SESSIONS.put(`${PENDING_PREFIX}${authId}`, JSON.stringify(pending), {
+    expirationTtl: AUTH_TTL_SECONDS,
+  })
+  return c.json({ authId, authorizeUrl })
+})
+
+/** Step two: exchange the pasted `code#state` for the subscription token. */
+connect.post('/claude/finish', async (c) => {
   const workspaceId = workspaceOf(c.req.raw)
-  const body = await c.req.json<{ token?: unknown }>().catch(() => ({ token: undefined }))
+  const body: { authId?: unknown; code?: unknown } = await c.req
+    .json<{ authId?: unknown; code?: unknown }>()
+    .catch(() => ({}))
+
+  if (!isAuthId(body.authId))
+    return c.json({ error: 'That sign-in has expired. Start again.' }, 400)
+
+  const key = `${PENDING_PREFIX}${body.authId}`
+  const pending = await c.env.SESSIONS.get<PendingAuth>(key, 'json')
+  if (!pending) return c.json({ error: 'That sign-in timed out. Start again.' }, 400)
 
   try {
-    const cred = parseClaudeCredential(typeof body.token === 'string' ? body.token : '')
-    await verifyClaude(cred.secret, cred.kind)
-    const connection = await saveConnection(c.env, workspaceId, 'claude', cred)
+    const tokens = await finishClaudeAuth(typeof body.code === 'string' ? body.code : '', pending)
+    const connection = await saveConnection(c.env, workspaceId, 'claude', 'subscription', tokens)
+    // One-time by construction: burn it whether or not a later step fails.
+    await c.env.SESSIONS.delete(key)
     return c.json({ connection })
   } catch (err) {
-    // Only our own messages reach a person. Anything else would risk echoing a
-    // provider body, and a provider body can contain the credential.
-    if (err instanceof CredentialError) return c.json({ error: err.message }, 400)
-    return c.json({ error: 'Something went wrong saving that. Nothing was stored — try again.' }, 500)
+    if (err instanceof OAuthError) {
+      // A rejected code is spent — leaving it live invites replay attempts.
+      await c.env.SESSIONS.delete(key)
+      return c.json({ error: err.message }, 400)
+    }
+    // Never echo a provider body: it can contain the token.
+    return c.json({ error: 'Something went wrong signing in. Nothing was saved — try again.' }, 500)
   }
 })
 

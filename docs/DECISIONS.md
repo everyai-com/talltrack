@@ -165,3 +165,39 @@ one as the other returns a 401 indistinguishable from a revoked credential.
 **And:** the token is verified against Anthropic *before* being stored. A bad
 token should fail on the screen where it can be fixed, not silently at 6am on
 the first real run where the only symptom is an empty week.
+
+---
+
+## 2026-07-31 — One-click sign-in: PKCE in the Worker, no terminal and no container
+
+**Decision:** Sign in with Claude is one button. It opens Anthropic's approval
+page in a new tab; the person approves, Anthropic shows a short code, they paste
+it back, and the Worker exchanges it server-side. Ported from callcraft's
+`src/llm/engine.ts`, which runs this flow in production.
+
+**Supersedes** the paste-a-setup-token flow shipped earlier the same day.
+
+**Why this beats both earlier options.** AIOS drives the CLI inside a Sandbox and
+scrapes the token off a rendered PTY, which needs a container image, a Durable
+Object, a 539-line PTY wrapper and a wrapper-hash handshake. The paste flow
+needed no infrastructure but sent the person to a terminal. Running PKCE directly
+in the Worker needs neither: no container, no CLI, no terminal — and it produces
+the same subscription credential as both.
+
+**The security rule that shapes the code:** the PKCE verifier never leaves the
+Worker. It lives in KV under a server-issued opaque id and the browser only ever
+sees that id. A verifier that reaches the browser turns PKCE back into a bare
+redirect that anyone holding the code could complete. The `state` is compared in
+constant time, and a pending sign-in is deleted whether the exchange succeeds or
+fails, so a rejected code can't be replayed.
+
+**Refresh tokens are stored, not just access tokens.** Subscription tokens are
+short-lived; without refresh the product works for an hour and then quietly
+stops, which reads to a user as "it broke" rather than "sign in again". The
+refresh happens in `loadCredential` at the moment of use rather than on a
+schedule — a token that went stale overnight is renewed by the run that needs it,
+not by a cron nobody notices has stopped.
+
+**Popup blockers.** `window.open` can be silently blocked, which would leave the
+person holding a paste box and no tab to paste from. The authorize URL is kept in
+state and offered as a plain link.
