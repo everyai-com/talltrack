@@ -114,6 +114,27 @@ terminal — see `docs/DECISIONS.md`.
 the deployed Worker: a bad paste returns 400 and renders a human message, no
 console errors.
 
+## 2026-07-31 (final) — One-click sign-in, live
+
+Worker version `75d7b886` at https://talltrack.everyai-com.workers.dev.
+
+**Sign in with Claude is one button.** It opens Anthropic's approval page in a
+new tab; approve, paste the short code back, done. No terminal, no container.
+PKCE runs in the Worker (ported from callcraft's `src/llm/engine.ts`), the
+verifier never leaves the server, and the resulting credential is the same
+subscription token `claude setup-token` produces.
+
+Superseded the paste-a-setup-token flow from earlier the same day, which worked
+but sent people to a shell.
+
+**Refresh tokens are stored and renewed at the moment of use.** Subscription
+tokens are short-lived; without this the product works for an hour and then
+quietly stops — which reads as "it broke", not "sign in again".
+
+48 tests, `npm run check` green. Verified against the deployed Worker: the
+authorize URL has the right client, `code=true` and an S256 challenge; expired
+and unknown sign-ins each return their own human message; no console errors.
+
 ## Owed
 
 - [ ] GitHub remote (blocked on `gh auth login`)
