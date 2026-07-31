@@ -1,6 +1,7 @@
 import type { Engine, EngineCredential } from '../engine'
 import { engineFor, judgeEngineFor } from '../engine'
 import { write, type CallInput, type Draft, type WriteContext } from './write'
+import { checkQuotes, dequoteUnmatched } from './quote-check'
 import { judge, CRAFT_MARKS, type Verdict } from './judge'
 
 export * from './write'
@@ -53,6 +54,14 @@ export async function produce(
   const sources = calls.map((c) => c.transcript)
   const jury = engines.jury ?? judgeEngineFor(cred)
 
+  // Withdraw unverifiable verbatim claims before judging: a paraphrase wearing
+  // quote marks loses its marks, not its post. Anything still unmatched after
+  // this (nested or malformed quoting) is fabrication and the judge kills it.
+  const cleaned = written.drafts.map((draft) => {
+    const quotes = checkQuotes(draft.body, sources)
+    return quotes.ok ? draft : { ...draft, body: dequoteUnmatched(draft.body, quotes.unmatched) }
+  })
+
   // Judge each draft independently and never let one failure take the others
   // down. Writing is the expensive step; losing two good drafts because a cheap
   // judge call hit a rate limit would be the worst trade in the product.
@@ -61,7 +70,7 @@ export async function produce(
   // closed is the only safe default — publishing something unjudged is exactly
   // what the judge exists to prevent.
   const judged = await Promise.all(
-    written.drafts.map(async (draft) => {
+    cleaned.map(async (draft) => {
       try {
         return { draft, verdict: await judge(jury, draft, sources, ctx.audience) }
       } catch {

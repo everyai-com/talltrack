@@ -86,3 +86,18 @@ export function checkQuotes(body: string, sources: string[]): QuoteCheck {
 
   return { ok: unmatched.length === 0, unmatched, checked: quotes.length }
 }
+
+/**
+ * Strip the quote marks from spans the transcript cannot back, leaving the
+ * words as honest paraphrase. Deterministic, surgical, and NOT a revision:
+ * no word changes, only the verbatim claim is withdrawn. This exists because
+ * a writer steeped in reference posts reliably puts paraphrase in quote marks,
+ * and executing the whole post for it throws away real writing.
+ */
+export function dequoteUnmatched(body: string, unmatched: string[]): string {
+  let out = body.replace(/[“”‟]/g, '"')
+  for (const span of unmatched) {
+    out = out.split(`"${span}"`).join(span)
+  }
+  return out
+}

@@ -391,3 +391,46 @@ for the bake-off; front door shows only v2.
 problem — its absence of verbatim material was); porting callcraft's 150-post
 engagement library and scout stage now (one-pass with 27 references first;
 selection-over-catalog is the recorded next step if the library grows).
+
+---
+
+## 2026-08-01 — The writer thinks in phases, and prose never travels inside JSON
+
+**The founder's report, second round:** "it is about the quality writing and
+everything" — better wasn't the bar; AIOS-session quality is the bar.
+
+**Decision:** the writer now runs in the phases AIOS actually writes in:
+FIND (read everything, name 0–3 tensions; JSON, because that output is data) →
+WRITE (one call PER post, whole transcripts in context, output is the post
+itself — no JSON anywhere near the prose) → CUT (the editor's pass: start
+later, end earlier, add nothing). The judge stays downstream, drop-don't-revise.
+
+**Why:** two register problems in the single-call design. A model asked to fill
+a JSON string writes flatter than a model asked to write — escaping, no room to
+breathe, the "data" register. And one call writing three posts gives each a
+third of its attention. callcraft's founder named it: "AI needs to think in
+phases." Cost triples (~308k input/week vs ~78k) and is worth exactly that:
+subscription-flat, and quality is the product.
+
+**The first live phased run found the next defect for us:** all three posts
+died on the quote check. Prose register plus 27 quote-heavy reference posts
+pulls the writer toward putting paraphrase in quote marks. Two-sided fix:
+1. The quote law is now stated where the writing happens ("QUOTATION MARKS ARE
+   A VERBATIM CLAIM… the reference posts' quotes were theirs to make; yours
+   must be real") and again in the cut pass.
+2. `dequoteUnmatched` — a paraphrase wearing quote marks loses its MARKS, not
+   its post. Deterministic, surgical, zero word changes; the verbatim claim is
+   withdrawn and the words stand as honest paraphrase. Executing a whole post
+   for a stylistic quoting slip threw away three real posts in one run.
+
+**Measured across three generations on the same ten calls:** v1 (constitution
+only) — essay cadence, thesis-first. v2 (verbatim style + references) — scenes,
+real speech, hard landings. v3 (phased) — denser operational detail, ownable
+thesis lines ("Pain tells you what to build. It says nothing about who will
+pay"), honest closes ("The HVAC job fails both, and I sold it anyway"). All
+three generations archived under corpus/out-v* for the bake-off.
+
+**Rejected:** letting the cut pass see the transcripts (doubles the cost of
+every cut for marginal gain — the cut adds nothing by law, so it needs no
+evidence); a model-driven quote-repair loop (revision loops are how callcraft
+reached 328 drafts; the dequote is deterministic string surgery, not a rewrite).

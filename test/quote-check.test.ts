@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkQuotes, extractQuotes, normalize } from '../src/writer/quote-check'
+import { checkQuotes, dequoteUnmatched, extractQuotes, normalize } from '../src/writer/quote-check'
 
 const CALL = `Priya: So we looked at the numbers again and honestly, the balance date was the whole problem.
 Sam: Right, and you'd already signed off on the import by then.
@@ -62,5 +62,24 @@ describe('short quotes', () => {
     // Seven characters. The easiest kind to fabricate and the hardest to spot.
     expect(checkQuotes('He said "we lost" and left.', [CALL]).ok).toBe(false)
     expect(checkQuotes('She said "We had" before the pause.', [CALL]).ok).toBe(true)
+  })
+})
+
+describe('dequoting a paraphrase wearing quote marks', () => {
+  it('strips only the unmatched spans and changes no words', () => {
+    const body = 'He said "the mistake was yours" and she said "we signed off, then found it."'
+    const result = checkQuotes(body, [CALL])
+    expect(result.unmatched).toEqual(['the mistake was yours'])
+    const cleaned = dequoteUnmatched(body, result.unmatched)
+    expect(cleaned).toBe('He said the mistake was yours and she said "we signed off, then found it."')
+    // The surviving real quote still verifies.
+    expect(checkQuotes(cleaned, [CALL]).ok).toBe(true)
+  })
+
+  it('handles curly quotes the same as straight ones', () => {
+    const body = 'He said “we lost the account” flatly.'
+    const result = checkQuotes(body, [CALL])
+    const cleaned = dequoteUnmatched(body, result.unmatched)
+    expect(cleaned).toBe('He said we lost the account flatly.')
   })
 })
