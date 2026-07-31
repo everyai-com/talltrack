@@ -353,3 +353,41 @@ the transcript endpoint contributes only text.
 **Known limit, not blocking:** 30 of 40 listed Fathom calls have no retrievable
 transcript (shorts, unprocessed, or transcript-disabled). Counted and reported,
 never guessed at.
+
+---
+
+## 2026-07-31 — The constitution alone was a distillation; the verbatim AIOS assets are the writer
+
+**The founder's report:** "the content is not coming as good as the AIOS app."
+
+**The diagnosis was already written.** callcraft hit this identical gap on
+2026-07-19 and its memory records the finding twice over: AIOS posts beat
+pipeline posts because AIOS holds the 190-line writing-style skill VERBATIM and
+27 high-performing reference posts VERBATIM in context with a template lock —
+and "when porting AIOS assets, keep the verbatim material in context;
+distillation loses what makes it work." TallTrack's constitution was exactly
+that mistake, made a third time: principles restated in my own words, zero
+reference posts, and the publishedExamples hook wired but never fed.
+
+**The fix, ported not rewritten:**
+- `src/writer/style.ts` — callcraft's `prompts/style.ts` copied verbatim (it IS
+  the AIOS writing-style SKILL.md, compiled, with provenance hashes). The
+  standing rule carries over: re-port when the source changes, never fork.
+- `src/writer/references.ts` — the 27 Suprava reference posts verbatim (~5k
+  tokens) plus the template lock: pick the ONE best-fit reference, mirror its
+  structural DNA, structure only — facts, numbers, offers, phrases, CTAs never
+  transfer.
+- Prompt order is deliberate: constitution (what a post IS, the licence to
+  write nothing) → style law (HOW) → lock + library (the bar and the shapes).
+
+**Measured on the same ten calls, same model, same profile:** v1 opened on
+theses and wrote essay cadence ("Which inverts how this market looks from the
+outside"); v2 opens on scenes ("At a startup fair in Hyderabad…"), carries real
+speech ("caveman to Elon Musk in one step, the way he put it"), and lands
+("Nobody from that fair is on the list of ten"). v1 archived to corpus/out-v1/
+for the bake-off; front door shows only v2.
+
+**Rejected:** tuning the constitution's wording (the constitution was not the
+problem — its absence of verbatim material was); porting callcraft's 150-post
+engagement library and scout stage now (one-pass with 27 references first;
+selection-over-catalog is the recorded next step if the library grows).

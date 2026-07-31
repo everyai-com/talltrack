@@ -1,5 +1,7 @@
 import type { Engine } from '../engine'
 import { CONSTITUTION, MIN_VOICE_EXAMPLES, VOICE_PREAMBLE } from './constitution'
+import { WRITING_STYLE } from './style'
+import { LINKEDIN_TEMPLATE_LIBRARY, TEMPLATE_LOCK } from './references'
 
 export type CallInput = {
   id: string
@@ -89,7 +91,11 @@ function escapeAttr(s: string): string {
 }
 
 export function buildWritePrompt(calls: CallInput[], ctx: WriteContext = {}): { system: string; user: string } {
-  const parts: string[] = [CONSTITUTION]
+  // Order matters and is deliberate: the constitution is the spine (what a
+  // post IS, and the licence to write nothing), the style law and the verbatim
+  // reference library are HOW — ported from AIOS unchanged, because their
+  // distillation was measurably worse (docs/DECISIONS.md, 2026-07-31).
+  const parts: string[] = [CONSTITUTION, WRITING_STYLE, TEMPLATE_LOCK, LINKEDIN_TEMPLATE_LIBRARY]
 
   const examples = ctx.publishedExamples ?? []
   if (examples.length >= MIN_VOICE_EXAMPLES) {
