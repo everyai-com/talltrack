@@ -105,3 +105,91 @@ h1 {
 .dot.ok {
   background: var(--accent);
 }
+
+/* Connect */
+
+.cmd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.cmd:hover {
+  border-color: var(--accent);
+}
+
+.cmd code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.cmd-hint {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+form {
+  display: flex;
+  gap: 8px;
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.primary {
+  padding: 10px 16px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: #1a1210;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #e8836a;
+}
+
+.fine {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}

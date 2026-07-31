@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { health } from './routes/health'
+import { connect } from './routes/connect'
 
 // Generated from wrangler.jsonc by `npm run types` into worker-configuration.d.ts.
 // Never hand-write this — a binding added to config but missed here is exactly
@@ -9,6 +10,7 @@ export type Env = Cloudflare.Env
 const app = new Hono<{ Bindings: Env }>()
 
 app.route('/api/health', health)
+app.route('/api/connect', connect)
 
 // Anything else under /api is a real miss, not an SPA route. Say so plainly —
 // a 404 that renders the app shell is the hardest kind of bug to find.

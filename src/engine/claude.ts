@@ -1,4 +1,5 @@
 import { EngineError, engineErrorFor, type Engine, type EngineCredential, type RunRequest, type RunResult } from './types'
+import { claudeAuthHeaders } from '../providers/claude-credential'
 
 const API = 'https://api.anthropic.com/v1/messages'
 const VERSION = '2023-06-01'
@@ -27,8 +28,10 @@ export function claudeEngine(cred: EngineCredential): Engine {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-api-key': cred.secret,
           'anthropic-version': VERSION,
+          // A subscription token and an API key are sent differently; getting
+          // this wrong produces a 401 indistinguishable from a revoked token.
+          ...claudeAuthHeaders({ kind: cred.kind ?? 'api_key', secret: cred.secret }),
         },
         body: JSON.stringify({
           model: cred.model ?? CLAUDE_DEFAULT_MODEL,

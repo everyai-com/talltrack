@@ -11,8 +11,14 @@ export type EngineName = 'claude' | 'codex'
 
 export type EngineCredential = {
   engine: EngineName
-  /** The user's own API credential, decrypted only in memory, never logged. */
+  /** The user's own credential, decrypted only in memory, never logged. */
   secret: string
+  /**
+   * Which kind of Claude credential this is. A subscription token from
+   * `claude setup-token` and a console API key go on the wire differently, so
+   * the distinction has to survive from storage to the request.
+   */
+  kind?: 'subscription' | 'api_key'
   /** Optional pin. Absent means the adapter's current default. */
   model?: string
 }

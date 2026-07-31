@@ -128,3 +128,40 @@ the judge exists to prevent, so an unreachable verdict must never default to kee
 **Why:** at 8, `he said "we lost"` — seven characters — was not checked at all.
 Short quotes are the easiest to fabricate and the hardest to notice, which is the
 opposite of what an unchecked band should contain.
+
+---
+
+## 2026-07-31 — Claude sign-in: same credential as AIOS, simpler capture
+
+**Decision:** TallTrack accepts the credential `claude setup-token` mints — the
+**same command and the same `sk-ant-oat01-…` token AIOS uses**, billing the
+person's Claude subscription. The person runs the command and pastes the result.
+
+**Rejected — porting AIOS's container capture.** `aios-core` drives the CLI
+inside a Cloudflare Sandbox and scrapes the token off a rendered PTY. Faithfully
+reproducing it needs a 539-line Python wrapper, a container image, a Durable
+Object class, `standard-2` container instances, and a wrapper-hash handshake
+that exists because `wrangler deploy` once reported success while leaving the
+container pinned to the previous image. The comments in
+`aios-core/src/providers/claude/auth.ts` are a catalogue of how much went wrong
+getting it working: the TUI redraws by diff and corrupts the token mid-stream,
+the CLI idles instead of exiting on a rejected code, silence has to be measured
+from the last output *change* rather than from delivery.
+
+**The distinction that makes this fine:** how a token is *captured* is separate
+from how it is *used*. Both paths produce the identical credential, so
+`src/providers/claude-credential.ts` is the only file that would change if the
+container capture is added later. Nothing downstream of it knows the difference.
+
+**What is genuinely lost:** the person leaves the browser for a terminal. For a
+founder-facing product that is a real cost, and the container flow should
+eventually land. It is not worth blocking the writer on today.
+
+**Also decided:** the credential *kind* is stored, not re-guessed at request
+time. A subscription token goes out as `Authorization: Bearer` plus
+`anthropic-beta: oauth-2025-04-20`; an API key goes out as `x-api-key`. Sending
+one as the other returns a 401 indistinguishable from a revoked credential.
+
+**And:** the token is verified against Anthropic *before* being stored. A bad
+token should fail on the screen where it can be fixed, not silently at 6am on
+the first real run where the only symptom is an empty week.

@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
+import { Connect, type Connection } from './Connect'
 
 type Health = { ok: boolean; service: string; bindings: Record<string, boolean> }
 
 /**
  * The front door is "This week" — a post, or an honest nothing. Never a chat
- * box and never a menu (see docs/PLAN.md §6). Right now there is no writer and
- * no notetaker connected, so the honest state is the empty one, said plainly.
+ * box and never a menu (docs/PLAN.md §6). Until a notetaker is connected the
+ * honest state is the empty one, said plainly rather than dressed up.
  */
 export function App() {
   const [health, setHealth] = useState<Health | null>(null)
   const [reachable, setReachable] = useState<boolean | null>(null)
+  const [claude, setClaude] = useState<Connection | null>(null)
 
   useEffect(() => {
     fetch('/api/health')
@@ -19,6 +21,11 @@ export function App() {
         setReachable(true)
       })
       .catch(() => setReachable(false))
+
+    fetch('/api/connect')
+      .then((r) => r.json() as Promise<{ connections: Connection[] }>)
+      .then((d) => setClaude(d.connections.find((c) => c.engine === 'claude') ?? null))
+      .catch(() => setClaude(null))
   }, [])
 
   return (
@@ -29,18 +36,15 @@ export function App() {
 
       <h1>Nothing to post yet.</h1>
       <p className="lede">
-        Once your notetaker is connected, this is where the week&rsquo;s posts land — one to
-        three of them, or a straight answer that there wasn&rsquo;t a story in the calls.
+        Once your calls are connected, this is where the week&rsquo;s posts land &mdash; one to three of them, or a
+        straight answer that there wasn&rsquo;t a story in the calls.
       </p>
+
+      <Connect connection={claude} onConnected={setClaude} />
 
       <div className="card">
         <h2>Connect your calls</h2>
         <p>Fathom first, then Gong and Fireflies. Not built yet.</p>
-      </div>
-
-      <div className="card">
-        <h2>Bring your own Claude or Codex</h2>
-        <p>The writing runs on your subscription, not ours. Not built yet.</p>
       </div>
 
       <p className="status">
@@ -48,9 +52,7 @@ export function App() {
         {reachable === null && 'Checking the service…'}
         {reachable === false && 'Can’t reach the service. Is it running?'}
         {reachable === true &&
-          (health?.ok
-            ? 'Service up, storage wired.'
-            : 'Service up, but storage isn’t wired yet.')}
+          (health?.ok ? 'Service up, storage wired.' : 'Service up, but storage isn’t wired yet.')}
       </p>
     </div>
   )
