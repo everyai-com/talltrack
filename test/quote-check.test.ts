@@ -56,3 +56,11 @@ describe('quote check', () => {
     expect(normalize('  The  “Balance” Date — yes ')).toBe('the "balance" date - yes')
   })
 })
+
+describe('short quotes', () => {
+  it('checks quotes too short to have been caught before', () => {
+    // Seven characters. The easiest kind to fabricate and the hardest to spot.
+    expect(checkQuotes('He said "we lost" and left.', [CALL]).ok).toBe(false)
+    expect(checkQuotes('She said "We had" before the pause.', [CALL]).ok).toBe(true)
+  })
+})

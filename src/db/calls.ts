@@ -8,7 +8,13 @@ import type { TranscriptResult } from '../ingest/types'
  * touches a log, and never appears in an error message.
  */
 
-export type Env = { DB: D1Database; TRANSCRIPTS: R2Bucket; MASTER_KEY: string }
+/**
+ * Derived from the generated binding types, never hand-declared. A local
+ * `type Env = { ... }` here would typecheck perfectly while shadowing the real
+ * environment — which is exactly how `MASTER_KEY` came to be read by this file
+ * before it existed as a secret anywhere.
+ */
+export type Env = Pick<Cloudflare.Env, 'DB' | 'TRANSCRIPTS' | 'MASTER_KEY'>
 
 export type CallRow = {
   id: string

@@ -26,11 +26,15 @@ export function normalize(s: string): string {
 /**
  * Quoted spans in the post body. Only double quotes count: apostrophes and
  * single-quoted asides are far too noisy to treat as claims of verbatim speech.
+ *
+ * The lower bound is 4 characters, not 8. A short quote is the easiest kind to
+ * fabricate and the hardest to notice — `he said "we lost"` is seven characters
+ * and would have gone unchecked entirely.
  */
 export function extractQuotes(body: string): string[] {
   const normalizedBody = body.replace(/[“”‟]/g, '"')
   const found: string[] = []
-  const re = /"([^"\n]{8,400})"/g
+  const re = /"([^"\n]{4,400})"/g
   let m: RegExpExecArray | null
   while ((m = re.exec(normalizedBody)) !== null) {
     const inner = m[1]

@@ -145,6 +145,43 @@ describe('produce', () => {
     expect(result.nothingBecause).toContain('never said')
   })
 
+  it('does not let one failed judgement destroy the other drafts', async () => {
+    const twoDrafts = JSON.stringify({
+      drafts: [
+        { tension: 't1', body: 'first post', call_ids: ['c1'] },
+        { tension: 't2', body: 'second post', call_ids: ['c1'] },
+      ],
+    })
+    // First judge call blows up; the second returns a clean pass. Writing is
+    // the expensive step, so losing a good draft to a cheap hiccup is the worst
+    // trade available.
+    let call = 0
+    const flaky: Engine = {
+      name: 'claude',
+      async run(): Promise<RunResult> {
+        if (call++ === 0) throw new Error('429')
+        return { text: verdictJson(8), model: 'test-model', inputTokens: 1, outputTokens: 1 }
+      },
+    }
+
+    const result = await produce(cred, calls, {}, { writer: scriptedEngine([twoDrafts]), jury: flaky })
+    expect(result.kept).toHaveLength(1)
+    expect(result.dropped).toHaveLength(1)
+    expect(result.dropped[0]!.verdict.droppedBecause).toContain('Couldn’t check')
+  })
+
+  it('fails closed when no draft could be judged, without blaming fabrication', async () => {
+    const dead: Engine = {
+      name: 'claude',
+      async run(): Promise<RunResult> {
+        throw new Error('unavailable')
+      },
+    }
+    const result = await produce(cred, calls, {}, { writer: scriptedEngine([oneDraft]), jury: dead })
+    expect(result.kept).toHaveLength(0)
+    expect(result.nothingBecause).not.toContain('never said')
+  })
+
   it('carries a cost receipt even on a week that produced nothing', async () => {
     const result = await produce(cred, calls, {}, {
       writer: scriptedEngine(['{"drafts":[],"nothing_because":"All scheduling."}']),

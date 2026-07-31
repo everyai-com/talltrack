@@ -83,3 +83,48 @@ added to `wrangler.jsonc` but missing from `Env` becomes a type error instead of
 **Cost:** `npm run types` must be re-run after any binding change. Recorded in
 `CLAUDE.md` and `README.md` because it is exactly the kind of step that gets
 forgotten once and then debugged for an hour.
+
+---
+
+## 2026-07-31 — Bindings and secrets derive from generated types, never module-local ones
+
+**Decision:** `src/db/calls.ts` uses `Pick<Cloudflare.Env, …>`; secrets are declared
+on `Cloudflare.Env` in `src/env.d.ts`; nothing hand-declares an `Env` shape.
+
+**Why:** an adversarial pass found `src/db/calls.ts` reading `env.MASTER_KEY` when
+`MASTER_KEY` existed nowhere — not in `wrangler.jsonc`, not as a secret, not in the
+generated types. It typechecked perfectly, because the file declared its own local
+`type Env = { …; MASTER_KEY: string }` which shadowed the real environment. At
+runtime every transcript write would have failed. A module-local Env type is a
+typecheck that validates itself.
+
+**Also:** `MASTER_KEY` is now generated and set (`wrangler secret put`), with a
+matching gitignored `.dev.vars`. Secrets can't appear in `wrangler.jsonc` because
+that file is committed, which is exactly why they need declaring somewhere else
+rather than being invented at the point of use.
+
+---
+
+## 2026-07-31 — One failed judgement never destroys the other drafts
+
+**Decision:** each draft is judged inside its own try/catch. A draft whose verdict
+can't be obtained is **dropped, not kept**, and the summary says "couldn't check
+this one" rather than blaming fabrication.
+
+**Why:** the first version judged with a bare `Promise.all`, so a single rate-limit
+or malformed response rejected the whole batch and threw away drafts that had
+already passed. Writing is the expensive step and judging is the cheap one —
+losing good writing to a cheap hiccup is the worst trade in the product.
+
+**Failing closed is deliberate.** Publishing something unjudged is precisely what
+the judge exists to prevent, so an unreachable verdict must never default to keep.
+
+---
+
+## 2026-07-31 — Short quotes are checked too
+
+**Decision:** the quote checker's lower bound is 4 characters, not 8.
+
+**Why:** at 8, `he said "we lost"` — seven characters — was not checked at all.
+Short quotes are the easiest to fabricate and the hardest to notice, which is the
+opposite of what an unchecked band should contain.
