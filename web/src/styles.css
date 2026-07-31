@@ -1,0 +1,107 @@
+/* Warm dark, one accent, no gradients. Per context/design-principles.md in the
+   AIOS workspace: "a locker room with taste" — the accent is earned, not
+   decorative, and nothing is purple. */
+
+:root {
+  --bg: #14110f;
+  --surface: #1c1917;
+  --border: #2e2926;
+  --text: #f0ece7;
+  --muted: #a8a09a;
+  --accent: #d97757;
+
+  --radius: 10px;
+  --pad: 20px;
+
+  color-scheme: dark;
+  font-family: ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.shell {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 56px var(--pad) 96px;
+}
+
+.brand {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 40px;
+}
+
+.brand span {
+  color: var(--accent);
+}
+
+h1 {
+  font-size: 26px;
+  line-height: 1.25;
+  font-weight: 600;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+
+.lede {
+  color: var(--muted);
+  margin: 0 0 32px;
+  font-size: 15px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--pad);
+}
+
+.card + .card {
+  margin-top: 12px;
+}
+
+.card h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 32px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.dot.ok {
+  background: var(--accent);
+}

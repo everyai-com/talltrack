@@ -1,0 +1,44 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "talltrack",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-31",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "a54b12fe3ef06df16ff0041d79c18fc0",
+
+  "observability": { "enabled": true },
+
+  // The web client is built by Vite into web/dist and served as static assets.
+  // run_worker_first keeps /api/* on the Worker; everything else falls through
+  // to the SPA.
+  "assets": {
+    "directory": "./web/dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "talltrack",
+      "database_id": "5060da2d-d066-4cb0-a1cb-abf2d7573358",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "kv_namespaces": [
+    {
+      "binding": "SESSIONS",
+      "id": "a1f697802d284191828f70b33c83b262"
+    }
+  ],
+
+  // Transcripts are envelope-encrypted before they are written here. Nothing
+  // readable ever lands in this bucket. See docs/PLAN.md GT-2.
+  "r2_buckets": [
+    {
+      "binding": "TRANSCRIPTS",
+      "bucket_name": "talltrack-transcripts"
+    }
+  ]
+}
