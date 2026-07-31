@@ -241,3 +241,39 @@ thing that would change.
 **Gong and Fireflies are connect-only today:** the sign-in works end to end, but
 `listCalls`/`fetchTranscript` are Fathom-only and say so plainly rather than
 pretending. The read path lands with S1 for each provider.
+
+---
+
+## 2026-07-31 — Gong and Fireflies become real sign-ins, two different ways
+
+**The problem:** Composio's hosted page showed Gong and Fireflies as API-key
+entry forms — the person had to go find a key. Not one click.
+
+**Gong — a new Composio auth config, not new code.** The Gong toolkit supports
+`OAUTH2` with a Composio-managed app; callcraft's config had simply been created
+in key mode (its own decision log records "Basic-auth key+secret" as the v1.1
+path). Created `ac_YnJc4X-_BPJX` via the API with managed auth and pointed
+`COMPOSIO_GONG_AUTH_CONFIG` at it. Zero code changed; the same hosted link now
+lands on Gong's real sign-in.
+
+**Fireflies — callcraft's native MCP OAuth, ported.** Fireflies' regular API is
+key-only, so Composio *cannot* offer OAuth for it. But Fireflies runs a public
+remote MCP server with real OAuth 2.1 — dynamic client registration, PKCE,
+refresh — and callcraft built and productionised a native flow against it. Ported
+here: every sign-in registers its own public client (no client secret to hold),
+the grant is bound to the MCP server via RFC 8707 `resource` (without it the
+token "succeeds" and every later call 401s), and the callback lands on our
+Worker, which answers in plain HTML.
+
+**One deliberate simplification, recorded honestly:** callcraft's callback keeps
+encrypted resumable checkpoints so a retry can survive a mid-flow crash without
+re-exchanging the consumed single-use code. TallTrack instead deletes the
+pending state BEFORE the exchange — a replayed callback finds nothing and reads
+"expired", and a consumed code is never exchanged twice. The cost: a transient
+exchange failure means redoing a ten-second flow. The win: ~100 fewer lines of
+state machinery at a stage of the product where simplicity compounds.
+
+**Rejected:** asking Fireflies/Gong users to paste API keys (the thing being
+fixed); waiting for a Gong-approved partner app (callcraft's notes flag Gong
+partner approval as a launch-blocking dependency — the managed Composio app
+avoids it entirely).

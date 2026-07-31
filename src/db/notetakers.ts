@@ -16,6 +16,36 @@ export type NotetakerConnection = {
 }
 
 /**
+ * Fireflies connects natively, so its sealed OAuth grant lives here. Composio
+ * providers keep `sealed` null — their credential lives in Composio's vault.
+ */
+export async function sealCredential(
+  env: Env,
+  workspaceId: string,
+  provider: Notetaker,
+  sealed: string,
+): Promise<void> {
+  await env.DB.prepare(
+    `update notetakers set sealed = ?3 where workspace_id = ?1 and provider = ?2`,
+  )
+    .bind(workspaceId, provider, sealed)
+    .run()
+}
+
+export async function getSealedCredential(
+  env: Env,
+  workspaceId: string,
+  provider: Notetaker,
+): Promise<string | null> {
+  const row = await env.DB.prepare(
+    `select sealed from notetakers where workspace_id = ?1 and provider = ?2`,
+  )
+    .bind(workspaceId, provider)
+    .first<{ sealed: string | null }>()
+  return row?.sealed ?? null
+}
+
+/**
  * Written when the link is minted, before the person has approved anything.
  * Without this row there is nothing to poll against once they come back from
  * the other tab — the id would only exist in a browser variable that a refresh

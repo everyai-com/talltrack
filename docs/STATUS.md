@@ -149,6 +149,23 @@ fathom.video proxy-domain rule, the proxy's 200-with-inner-error shape, and
 exact-account matching on status polls. Gong/Fireflies are connect-only until
 their read paths land (S1).
 
+## 2026-07-31 (direct sign-ins) — Gong OAuth + Fireflies native, live
+
+Worker version `fbb91064`. All three notetakers are now true one-click sign-ins:
+
+- **Fathom** — Composio hosted (was already OAuth). **Connected for real** on the
+  founder workspace at 13:44 — the first live external connection.
+- **Gong** — new Composio-managed OAUTH2 auth config `ac_YnJc4X-_BPJX`; the old
+  key-mode config was the only reason it showed a key form.
+- **Fireflies** — native OAuth 2.1 against its MCP server (ported from
+  callcraft): dynamic client registration, PKCE, RFC 8707 resource binding,
+  callback on our Worker, sealed grant in the new `sealed` column.
+
+Verified live: Fireflies mints a real client and its authorize URL carries the
+prod callback + MCP resource; Gong mints on the new config; a replayed callback
+reads "expired" rather than double-exchanging. 60 tests, `npm run check` green,
+no console errors.
+
 ## Owed
 
 - [ ] GitHub remote (blocked on `gh auth login`)
