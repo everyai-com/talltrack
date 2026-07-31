@@ -313,3 +313,43 @@ governs both surfaces.
 writer (double-billing + silent wait, above); claude.ai web connectors (need an
 OAuth server on our side — real work, queued behind proving the loop in Claude
 Code); putting the key in the MCP URL.
+
+---
+
+## 2026-07-31 — The write path: sync → learn who you are → write → judge → front door
+
+**Decision:** one route (`POST /api/week/write`) does the whole loop in-request:
+pull fresh calls, derive the profile on first run (who they are, who they sell
+to, how they talk — from their own transcripts, not a form), write on their
+Claude, judge on a cheaper call of the same subscription, store what survives,
+record the quiet week when nothing does.
+
+**Proved live on the founder workspace:** 10 real Fathom calls ingested
+encrypted, profile derived from 5, **Opus 5 read 68,107 tokens of transcript
+and wrote 2 posts; both cleared the judge (reach 7)**; zero manufactured
+third post. First real content on the front door.
+
+**Four provider behaviours learned the expensive way (all now encoded in
+src/engine/claude.ts, three of them ported from callcraft's engine after our
+first write attempt failed):**
+1. A subscription token is scoped to Claude Code — the CLI identity must be the
+   FIRST system block or the call is rejected outright.
+2. Always stream: long writes exceed the ~100s non-streaming edge timeout.
+   A stream that ends without message_stop is treated as a failure — partial
+   text must never reach the judge looking complete.
+3. Opus 5 thinks by default and thinking spends max_tokens — floor the budget
+   at 40k for sonnet/opus or the answer truncates mid-JSON.
+4. **`temperature` is deprecated on Claude 5 models and 400s.** Discovered by
+   probing prod directly: the temp-0 profile call died instantly with
+   "`temperature` is deprecated for this model." Nothing sends temperature to
+   Claude anymore; the judge's near-determinism now rests on its strict prompt
+   and coarse bands, not sampling. Accepted trade.
+
+**Also fixed from live data:** the Fathom transcript endpoint returns no
+meeting metadata — the first sync produced ten calls all titled "Untitled call",
+all dated today. The list endpoint is now the source of truth for metadata;
+the transcript endpoint contributes only text.
+
+**Known limit, not blocking:** 30 of 40 listed Fathom calls have no retrievable
+transcript (shorts, unprocessed, or transcript-disabled). Counted and reported,
+never guessed at.

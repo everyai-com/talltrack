@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Connect, type Connection } from './Connect'
 import { Notetakers, type NotetakerConnection } from './Notetakers'
 import { UseInClaude } from './UseInClaude'
+import { ThisWeek } from './ThisWeek'
 
 type Health = { ok: boolean; service: string; bindings: Record<string, boolean> }
 
@@ -42,11 +43,7 @@ export function App() {
         Tall<span>Track</span>
       </p>
 
-      <h1>Nothing to post yet.</h1>
-      <p className="lede">
-        Once your calls are connected, this is where the week&rsquo;s posts land &mdash; one to three of them, or a
-        straight answer that there wasn&rsquo;t a story in the calls.
-      </p>
+      <ThisWeek ready={claude !== null && notetakers.some((n) => n.status === 'ACTIVE')} />
 
       <Connect connection={claude} onConnected={setClaude} />
 

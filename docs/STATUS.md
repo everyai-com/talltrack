@@ -188,6 +188,22 @@ integration-testing every DB-touching route. 72 tests.
 Claude Code today; claude.ai web connectors need an OAuth server on our side —
 queued behind proving the loop.
 
+## 2026-07-31 (THE LOOP CLOSED) — first real posts, written from real calls
+
+Worker version `0f4a2a6a`. **The product works end to end on real data:**
+connect Fathom (one click) → 10 real calls ingested encrypted → profile derived
+from 5 of them (who / audience / voice, from the transcripts) → **Opus 5 read
+68,107 tokens of real transcript and wrote 2 posts → both cleared the judge
+(reach 7) → both on the front door.** No manufactured third post. Cost receipt:
+68,107 in / 9,043 out on the founder's own subscription.
+
+Getting there surfaced four provider behaviours (CLI identity block, mandatory
+streaming, 40k thinking floor, temperature 400s on Claude 5) and one Fathom
+shape (transcript endpoint carries no metadata) — all in DECISIONS.md.
+
+83 tests, `npm run check` green. Front door verified live: posts render, copy
+works, console clean.
+
 ## Owed
 
 - [ ] GitHub remote (blocked on `gh auth login`)

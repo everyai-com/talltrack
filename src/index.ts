@@ -3,6 +3,7 @@ import { health } from './routes/health'
 import { connect } from './routes/connect'
 import { notetakers } from './routes/notetakers'
 import { connector } from './routes/connector'
+import { week } from './routes/week'
 import { workspaceForKey } from './mcp/keys'
 import { handleMcp } from './mcp/server'
 
@@ -17,6 +18,7 @@ app.route('/api/health', health)
 app.route('/api/connect', connect)
 app.route('/api/notetakers', notetakers)
 app.route('/api/connector', connector)
+app.route('/api/week', week)
 
 // The MCP endpoint — TallTrack inside Claude. Deliberately outside /api: it is
 // a machine surface with its own auth, and run_worker_first must catch it.

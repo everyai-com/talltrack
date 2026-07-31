@@ -291,3 +291,28 @@ code.wrap {
   white-space: pre-wrap;
   text-align: left;
 }
+
+/* Posts */
+
+.post-tension {
+  margin: 0 0 12px !important;
+  font-size: 13px;
+  color: var(--accent) !important;
+}
+
+.post-body {
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.post-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.post-foot .fine {
+  margin: 0;
+}
