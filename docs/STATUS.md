@@ -166,6 +166,28 @@ prod callback + MCP resource; Gong mints on the new config; a replayed callback
 reads "expired" rather than double-exchanging. 60 tests, `npm run check` green,
 no console errors.
 
+## 2026-07-31 (inside Claude) — MCP connector live
+
+Worker version `01043a92`. "Use it inside Claude" card mints a `tt_` key (shown
+once, stored as SHA-256) and the paste-able one-liner:
+
+    claude mcp add talltrack --transport http https://talltrack.everyai-com.workers.dev/mcp --header "Authorization: Bearer tt_…"
+
+Four tools — `this_week`, `read_call`, `writing_guide`, `save_post` — on a
+stateless hand-rolled JSON-RPC endpoint (~200 lines; callcraft's SDK+DO version
+is 2,127). Inside Claude, Claude is the writer: the tools serve whole
+transcripts and the constitution, and take approved posts back to the front
+door. Verified live end to end: 401 with a human sentence when unauthenticated,
+initialize/tools-list/all four tools green against prod, empty week answered
+honestly.
+
+Tests now apply D1 migrations to the per-run test database
+(readD1Migrations → TEST_MIGRATIONS binding → test/setup.ts), which unlocked
+integration-testing every DB-touching route. 72 tests.
+
+Claude Code today; claude.ai web connectors need an OAuth server on our side —
+queued behind proving the loop.
+
 ## Owed
 
 - [ ] GitHub remote (blocked on `gh auth login`)

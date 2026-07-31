@@ -277,3 +277,39 @@ state machinery at a stage of the product where simplicity compounds.
 fixed); waiting for a Gong-approved partner app (callcraft's notes flag Gong
 partner approval as a launch-blocking dependency — the managed Composio app
 avoids it entirely).
+
+---
+
+## 2026-07-31 — Inside Claude, Claude is the writer
+
+**Decision:** the MCP connector hands Claude the material — `this_week`,
+`read_call` (whole transcripts), `writing_guide` (the constitution) — and takes
+finished work back (`save_post`). It does NOT run the server-side writer.
+
+**Why:** in a Claude conversation there is already a frontier model with the
+person in the loop. Proxying a second model call through the Worker would cost
+their subscription twice, add a two-minute silent wait inside a chat, and put
+the writing behind a tool call instead of in the conversation where they can
+steer it. The constitution travels as a tool result, so the same editorial law
+governs both surfaces.
+
+**Also decided:**
+- **Hand-rolled JSON-RPC, not the agents SDK.** callcraft's SDK version is
+  2,127 lines with a Durable Object per session. Four tools with a fixed
+  contract need ~200 stateless lines and zero new dependencies. If the surface
+  grows real sessions or streaming, revisit.
+- **Keys in the Authorization header only, stored as SHA-256.** callcraft
+  shipped `/mcp/<key>` URL auth first and removed it — URLs land in logs,
+  history and proxies. The key is shown once at mint; rotation is the
+  "I pasted it somewhere wrong" fix.
+- **`save_post` requires a tension.** Law 2 survives the connector: if Claude
+  can't name the one-sentence tension, the post doesn't get saved.
+- **The tool descriptions carry the discipline** ("read every call in full
+  before writing", "never save drafts on your own initiative", "no calls is a
+  real answer — do not invent material") — inside Claude, descriptions are the
+  only place standing instructions can live.
+
+**Rejected:** exposing a `write_posts` tool that runs the server-side one-pass
+writer (double-billing + silent wait, above); claude.ai web connectors (need an
+OAuth server on our side — real work, queued behind proving the loop in Claude
+Code); putting the key in the MCP URL.

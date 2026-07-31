@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Connect, type Connection } from './Connect'
 import { Notetakers, type NotetakerConnection } from './Notetakers'
+import { UseInClaude } from './UseInClaude'
 
 type Health = { ok: boolean; service: string; bindings: Record<string, boolean> }
 
@@ -50,6 +51,8 @@ export function App() {
       <Connect connection={claude} onConnected={setClaude} />
 
       <Notetakers connections={notetakers} onChange={setNotetakers} />
+
+      <UseInClaude />
 
       <p className="status">
         <span className={`dot${health?.ok ? ' ok' : ''}`} />
