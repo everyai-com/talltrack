@@ -1,7 +1,7 @@
 import type { Engine } from '../engine'
 import { CONSTITUTION, MIN_VOICE_EXAMPLES, VOICE_PREAMBLE } from './constitution'
 import { WRITING_STYLE } from './style'
-import { LINKEDIN_TEMPLATE_LIBRARY, TEMPLATE_LOCK } from './references'
+import { FOUNDER_EXEMPLAR, LINKEDIN_TEMPLATE_LIBRARY, TEMPLATE_LOCK } from './references'
 
 /**
  * The writer, in phases — the shape AIOS actually writes in.
@@ -112,7 +112,7 @@ export function parseStories(text: string): { stories: Story[]; nothingBecause?:
 // ─── Phase 2: write one post, as prose ───────────────────────────────────────
 
 function writeSystem(ctx: WriteContext): string {
-  const parts = [CONSTITUTION, WRITING_STYLE, TEMPLATE_LOCK, LINKEDIN_TEMPLATE_LIBRARY]
+  const parts = [CONSTITUTION, WRITING_STYLE, FOUNDER_EXEMPLAR, TEMPLATE_LOCK, LINKEDIN_TEMPLATE_LIBRARY]
 
   const examples = ctx.publishedExamples ?? []
   if (examples.length >= MIN_VOICE_EXAMPLES) {

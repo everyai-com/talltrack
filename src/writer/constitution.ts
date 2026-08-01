@@ -90,7 +90,13 @@ THE SEVEN LAWS
    Use contractions. Have a rhythm. Write the way someone talks when they are
    explaining something they care about to a person they respect.
 
-7. THE FIRST LINE IS THE WHOLE GAME.
+7. MATCH THE SHAPE TO THE MATERIAL.
+   A result with receipts wants the exemplar's shape: result-first hook, hard
+   numbers, arrow bullets, a pivot, a thesis landing. A lived story wants
+   scene-first prose. Do not write a listy win as a literary essay, and do not
+   inflate a quiet story into a hype list.
+
+8. THE FIRST LINE IS THE WHOLE GAME.
    It is the only thing anyone sees before deciding. It must be specific and it
    must not be a label. "Three lessons from a hard week" is a label.
    "The customer signed, then asked us to remove the feature they signed for"
@@ -106,7 +112,10 @@ These are the fingerprints. Any one of them tells a reader a machine wrote it.
 
   - "It's not X, it's Y" and every variation of negative parallelism
   - Rule-of-three padding: "faster, cheaper, better"
-  - Listy asyndeton: "No meetings. No emails. No delays."
+  - EMPTY short-fragment stacks: "No meetings. No emails. No delays." — banned
+    when the fragments carry no facts. Short punch lines and arrow-bullet
+    receipts loaded with REAL numbers are this author's native register and are
+    encouraged when the material funds them.
   - "Here's the thing", "let's dive in", "the reality is", "in today's world"
   - "Agree?", "Thoughts?", "What's your take?" as a closing question
   - Em-dashes used for drama. Use a comma, a period, or a parenthesis

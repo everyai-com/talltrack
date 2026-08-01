@@ -434,3 +434,29 @@ three generations archived under corpus/out-v* for the bake-off.
 every cut for marginal gain — the cut adds nothing by law, so it needs no
 evidence); a model-driven quote-repair loop (revision loops are how callcraft
 reached 328 drafts; the dequote is deterministic string surgery, not a rewrite).
+
+---
+
+## 2026-08-01 — "Like AIOS does" is a register, not a quality level
+
+**The founder rejected two literary-register drafts.** Investigation found the
+actual quality bar: the mac-cleanup post AIOS wrote for him
+(AIOS_Phanindra/outputs/carousels/mac-cleanup-56gb/posts.md — the same post
+callcraft used as its exemplar). Its register: result-first hook with numbers,
+short standalone punch lines, arrow-bullet receipts, a "here's the part most
+people miss" pivot, short declaratives, thesis landing ("This is what an AI
+Operating System does").
+
+**The constitution was banning his native register** — "listy asyndeton" and
+short-fragment stacks are exactly what his best post is made of. Fixed:
+- FOUNDER_EXEMPLAR embedded verbatim in the write phase, with what it teaches
+  (structure and register only, never its facts).
+- The ban narrowed to EMPTY fragment stacks; receipt-loaded punch lines are
+  named as the author's native register.
+- New law: MATCH THE SHAPE TO THE MATERIAL — receipts get the exemplar shape,
+  lived stories get scene-first prose. Don't write a listy win as an essay or
+  inflate a quiet story into a hype list.
+
+**Lesson, appended to the distillation law:** the register IS content. A style
+law that optimizes for tasteful prose can steer directly away from what the
+author actually publishes. The exemplar beats the rules when they disagree.

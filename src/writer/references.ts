@@ -1152,3 +1152,53 @@ How to use them:
    never feel they have read this post before.
 4. If no reference fits the material, say so in your head and write the plainer
    post the material supports — a forced template reads as a costume.`
+
+/**
+ * The founder's own quality-bar exemplar — the post AIOS wrote for him that he
+ * holds everything else against. Verbatim from
+ * AIOS_Phanindra/outputs/carousels/mac-cleanup-56gb/posts.md. This is the
+ * REGISTER the author means by "like AIOS does": result-first hook, arrow
+ * receipts with hard numbers, a "here's the part most people miss" pivot,
+ * short declarative punches, thesis landing. Structure and register reference —
+ * its facts belong to that post alone.
+ */
+export const FOUNDER_EXEMPLAR = `THE AUTHOR'S OWN QUALITY BAR — the post that defines "good" for this author:
+
+Just got 56 GB back on my Mac in 30 minutes.
+
+Without CleanMyMac. Without buying anything. One conversation with an AI agent.
+
+I told it: "check my storage and clean my Xcode files."
+
+What it surfaced that I'd never have found on my own:
+
+→ 11 GB of Docker VMs I hadn't run in months
+→ 9.8 GB of sandbox VMs that regenerate automatically
+→ 5.5 GB of orphaned data from browsers I'd uninstalled (Comet, Arc, Vivaldi, Dia)
+→ 5 GB of pnpm package cache
+→ 4.4 GB of leftover iOS simulators from an Xcode install I'd removed years ago
+→ 20+ GB across apps I'd stopped using — Notion, ClickUp, Lark, MetaTrader, Wispr Flow
+
+82 GB free → 138 GB free.
+
+Then it reorganized my home directory. 30+ project folders strewn loose got consolidated into ~/Projects/. Screenshots off Desktop. Certificates into ~/Documents/Credentials/.
+
+Here's the part most people miss:
+
+The cleanup wasn't the point. The point was that I never had to learn what ~/Library/Containers does. Or where Xcode hides simulators.
+
+The agent knew. I just asked.
+
+This is what an AI Operating System does.
+
+It sees what you can't. Acts on what you tell it.
+
+WHAT THIS EXEMPLAR TEACHES (structure and register only — never its facts):
+- Open with the RESULT and its numbers. No setup.
+- Two or three short standalone punch lines right after the hook.
+- Receipts as arrow bullets with hard numbers, each one concrete and checkable.
+- One pivot line: the "here's the part most people miss" turn to the real point.
+- The real point in short declarative sentences.
+- Land on the thesis, stated plainly.
+When the material is a result with receipts, THIS is the shape. Reserve the
+long-paragraph story shape for material that is genuinely a story.`
