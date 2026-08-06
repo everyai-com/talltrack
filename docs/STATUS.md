@@ -364,3 +364,17 @@ consent (screenshot) → approve → token (+refresh) → this_week in the fresh
 empty workspace answering honestly, all six tools listed. Code replay
 returns 400. 109 tests, `npm run check` green. Existing tt_ keys keep
 working unchanged.
+
+## 2026-08-07 — /start: the stuck-proof onboarding path, LIVE
+
+Worker version `403b894d`. A real tester hit the OAuth wall from a
+non-interactive Claude session (screenshot from the founder), so onboarding
+now has a path that works in EVERY session type: https://…/start is a
+public one-click page that mints a fresh workspace + connector key and
+hands back the complete `claude mcp add … --header` command (key shown
+once, stored as SHA-256, 20 mints/IP/day). The MCP now guides from inside
+too: `initialize` returns server instructions, the empty `this_week` tells
+Claude to offer `connect_notetaker`, and the 401 names both paths (/mcp
+sign-in for interactive sessions, /start for everything else). Verified
+live: page renders, click mints, the minted command's key opens the MCP on
+a fresh honest-empty workspace. 111 tests green.

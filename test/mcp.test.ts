@@ -45,7 +45,7 @@ describe('auth', () => {
     const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' })
     expect(res.status).toBe(401)
     const body = (await res.json()) as { error: string }
-    expect(body.error).toContain('connector key')
+    expect(body.error).toContain('/start')
   })
 
   it('rejects a wrong key', async () => {

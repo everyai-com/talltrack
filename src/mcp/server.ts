@@ -205,7 +205,7 @@ async function runTool(
     const calls = results ?? []
     if (calls.length === 0)
       return text(
-        `No calls in the last ${days} days. That is a real answer — do not invent material. The person can connect a notetaker or wait for calls to come in.`,
+        `No calls in the last ${days} days. That is a real answer — do not invent material. Offer to connect their call recorder right here: connect_notetaker with "fathom" returns a sign-in link (Fathom is the provider TallTrack can read today). Once connected, calls flow in on their own.`,
       )
     return text(
       `${calls.length} call${calls.length === 1 ? '' : 's'} in the last ${days} days. Read every one you intend to write from, in full, with read_call — then fetch writing_guide before drafting.\n\n${JSON.stringify(
@@ -287,6 +287,8 @@ export async function handleMcp(env: Env, workspaceId: string, request: Request)
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
         serverInfo: { name: 'talltrack', version: '0.1.0' },
+        instructions:
+          'TallTrack turns sales calls into posts worth publishing. Start with this_week to see the material. If the workspace is empty, offer to connect a call recorder with connect_notetaker (Fathom is the one TallTrack can read today). Before writing anything, read every relevant call in full with read_call and fetch writing_guide — it carries the editorial law and the post shape. Save only posts the person has seen and approved, with save_post. Zero posts is a real answer; never invent material.',
       })
 
     // Notifications get an empty 202 per the streamable-HTTP transport.

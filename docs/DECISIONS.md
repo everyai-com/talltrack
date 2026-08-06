@@ -709,3 +709,28 @@ chat transcripts, no revocation story); requiring the web access gate first
 (kills the one-link share). **Known consequence:** the consent page is a
 public workspace mint. Rate limiting and workspace expiry for abandoned
 empty workspaces are the first hardening steps if the link spreads wide.
+
+---
+
+## 2026-08-07 — Onboarding must survive every session type: /start beside OAuth
+
+**The field report:** the first outside tester added the bare MCP URL from a
+non-interactive Claude session — where the OAuth browser flow cannot run —
+and stalled with unusable tools.
+
+**Decision:** two onboarding paths, one per constraint. OAuth stays the
+default for interactive sessions (add bare URL, /mcp, approve). For
+everything else, /start is a public page whose one click mints a workspace
+and returns the complete paste-ready `claude mcp add` command with the
+connector key baked in. The MCP's 401 names both. The connector also now
+carries its own onboarding: initialize instructions and an empty-week
+this_week that offers connect_notetaker, so "added the link" flows into
+"calls connected" without anyone reading docs.
+
+**The trade, stated:** a key in a shell command lands in shell history.
+Accepted for onboarding because the alternative was a hard stall; the key
+is workspace-scoped, shown once, and replaceable. **Rejected:** trying to
+detect non-interactive clients server-side (nothing on the wire
+distinguishes them) and requiring OAuth for all (the stall this fixes).
+Per-IP mint limit (20/day, KV) guards the public mint; same limit is the
+first knob if abuse appears.

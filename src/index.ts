@@ -7,6 +7,7 @@ import { week } from './routes/week'
 import { posts } from './routes/posts'
 import { auth } from './routes/auth'
 import { demo } from './routes/demo'
+import { start } from './routes/start'
 import { workspaceForKey } from './mcp/keys'
 import { handleMcp } from './mcp/server'
 import {
@@ -49,6 +50,10 @@ app.route('/api/connector', connector)
 app.route('/api/week', week)
 app.route('/api/posts', posts)
 
+// The zero-friction onboarding page — outside /api, so the access gate never
+// blocks a stranger from creating their own workspace.
+app.route('/start', start)
+
 // OAuth for the public MCP connector: add the bare URL in Claude, approve in
 // a browser, and a fresh workspace exists. See src/oauth/mcp-oauth.ts.
 app.get('/.well-known/oauth-protected-resource', (c) => protectedResourceMetadata(new URL(c.req.url).origin))
@@ -71,7 +76,9 @@ app.all('/mcp', async (c) => {
   if (!workspaceId) {
     const origin = new URL(c.req.url).origin
     return c.json(
-      { error: 'Connect TallTrack first — run /mcp in Claude to sign in, or use a connector key from the TallTrack page.' },
+      {
+        error: `Connect TallTrack first. In an interactive Claude session, run /mcp and pick talltrack to sign in. In a session that can't open a browser, get a one-paste command with your own key at ${origin}/start instead.`,
+      },
       401,
       {
         'WWW-Authenticate': `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource"`,
