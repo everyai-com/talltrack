@@ -110,9 +110,14 @@ describe('judge', () => {
 describe('produce', () => {
   const cred = { engine: 'claude' as const, secret: 'test' }
   const calls = [{ id: 'c1', title: 'Acme', occurredAt: '2026-07-30T10:00:00Z', transcript: CALL }]
-  // The phased writer: find (JSON) → draft (prose) → cut (prose).
-  const oneStory = JSON.stringify({ stories: [{ tension: 't', call_ids: ['c1'], material: 'm' }] })
-  const writerScript = [oneStory, 'a post about the import', 'a post about the import']
+  // The AIOS-first writer emits all supported prose candidates in one call.
+  const onePost = `<post>
+TENSION: t
+CALLS: c1
+BODY:
+a post about the import
+</post>`
+  const writerScript = [onePost]
 
   it('keeps a draft that clears both checks', async () => {
     const result = await produce(cred, calls, {}, {
@@ -140,7 +145,7 @@ describe('produce', () => {
     // Executing the whole post for a paraphrase wearing quote marks threw away
     // three real posts in the first live phased run.
     const result = await produce(cred, calls, {}, {
-      writer: scriptedEngine([oneStory, 'He said, "we lost the account."', 'He said, "we lost the account."']),
+      writer: scriptedEngine([onePost.replace('a post about the import', 'He said, "we lost the account."')]),
       jury: scriptedEngine([verdictJson(9)]),
     })
     expect(result.kept).toHaveLength(1)
@@ -149,13 +154,18 @@ describe('produce', () => {
   })
 
   it('does not let one failed judgement destroy the other drafts', async () => {
-    const twoStories = JSON.stringify({
-      stories: [
-        { tension: 't1', call_ids: ['c1'], material: 'm1' },
-        { tension: 't2', call_ids: ['c1'], material: 'm2' },
-      ],
-    })
-    const twoDraftScript = [twoStories, 'first post', 'first post', 'second post', 'second post']
+    const twoDraftScript = [`<post>
+TENSION: t1
+CALLS: c1
+BODY:
+first post
+</post>
+<post>
+TENSION: t2
+CALLS: c1
+BODY:
+second post
+</post>`]
     // First judge call blows up; the second returns a clean pass. Writing is
     // the expensive step, so losing a good draft to a cheap hiccup is the worst
     // trade available.
@@ -188,7 +198,7 @@ describe('produce', () => {
 
   it('carries a cost receipt even on a week that produced nothing', async () => {
     const result = await produce(cred, calls, {}, {
-      writer: scriptedEngine(['{"stories":[],"nothing_because":"All scheduling."}']),
+      writer: scriptedEngine(['<nothing>All scheduling.</nothing>']),
       jury: scriptedEngine([verdictJson(9)]),
     })
     expect(result.nothingBecause).toBe('All scheduling.')

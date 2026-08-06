@@ -3,8 +3,11 @@ import { Connect, type Connection } from './Connect'
 import { Notetakers, type NotetakerConnection } from './Notetakers'
 import { UseInClaude } from './UseInClaude'
 import { ThisWeek } from './ThisWeek'
+import { AuthGate } from './AuthGate'
 
 type Health = { ok: boolean; service: string; bindings: Record<string, boolean> }
+export type ProviderCapability = { readReady: boolean; reason: string | null }
+type AuthStatus = { required: boolean; authenticated: boolean }
 
 /**
  * The front door is "This week" — a post, or an honest nothing. Never a chat
@@ -16,8 +19,19 @@ export function App() {
   const [reachable, setReachable] = useState<boolean | null>(null)
   const [claude, setClaude] = useState<Connection | null>(null)
   const [notetakers, setNotetakers] = useState<NotetakerConnection[]>([])
+  const [capabilities, setCapabilities] = useState<Record<string, ProviderCapability>>({})
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
 
   useEffect(() => {
+    fetch('/api/auth/status')
+      .then((r) => r.json() as Promise<AuthStatus>)
+      .then(setAuthStatus)
+      .catch(() => setAuthStatus({ required: false, authenticated: true }))
+  }, [])
+
+  useEffect(() => {
+    if (!authStatus?.authenticated) return
+
     fetch('/api/health')
       .then((r) => r.json() as Promise<Health>)
       .then((h) => {
@@ -32,10 +46,28 @@ export function App() {
       .catch(() => setClaude(null))
 
     fetch('/api/notetakers')
-      .then((r) => r.json() as Promise<{ notetakers: NotetakerConnection[] }>)
-      .then((d) => setNotetakers(d.notetakers))
+      .then((r) => r.json() as Promise<{ notetakers: NotetakerConnection[]; capabilities?: Record<string, ProviderCapability> }>)
+      .then((d) => {
+        setNotetakers(d.notetakers)
+        setCapabilities(d.capabilities ?? {})
+      })
       .catch(() => setNotetakers([]))
-  }, [])
+  }, [authStatus?.authenticated])
+
+  if (!authStatus) {
+    return (
+      <div className="shell">
+        <p className="brand">
+          Tall<span>Track</span>
+        </p>
+        <p className="lede">Checking the workspace…</p>
+      </div>
+    )
+  }
+
+  if (authStatus.required && !authStatus.authenticated) return <AuthGate onAuthenticated={() => setAuthStatus({ ...authStatus, authenticated: true })} />
+
+  const writeReady = notetakers.some((n) => n.status === 'ACTIVE' && capabilities[n.provider]?.readReady)
 
   return (
     <div className="shell">
@@ -43,11 +75,11 @@ export function App() {
         Tall<span>Track</span>
       </p>
 
-      <ThisWeek ready={claude !== null && notetakers.some((n) => n.status === 'ACTIVE')} />
+      <ThisWeek ready={claude !== null && writeReady} capabilities={capabilities} />
 
       <Connect connection={claude} onConnected={setClaude} />
 
-      <Notetakers connections={notetakers} onChange={setNotetakers} />
+      <Notetakers connections={notetakers} capabilities={capabilities} onChange={setNotetakers} />
 
       <UseInClaude />
 

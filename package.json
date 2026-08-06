@@ -14,7 +14,10 @@
     "migrate:local": "wrangler d1 migrations apply talltrack --local",
     "migrate:remote": "wrangler d1 migrations apply talltrack --remote",
     "types": "wrangler types",
-    "bakeoff": "node --experimental-strip-types scripts/bakeoff.ts"
+    "bakeoff": "node --experimental-strip-types scripts/bakeoff.ts",
+    "bakeoff:prepare": "node --experimental-strip-types scripts/prepare-bakeoff.ts",
+    "bakeoff:claude": "node --experimental-strip-types scripts/bakeoff-claude.ts",
+    "demo:seed": "node --experimental-strip-types scripts/seed-local-demo.ts"
   },
   "dependencies": {
     "hono": "^4.6.14",

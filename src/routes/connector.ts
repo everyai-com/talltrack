@@ -17,7 +17,7 @@ function snippetFor(origin: string, key: string): { claudeCode: string; mcpUrl: 
 }
 
 connector.get('/', async (c) => {
-  const info = await keyInfo(c.env, workspaceOf(c.req.raw))
+  const info = await keyInfo(c.env, await workspaceOf(c.req.raw, c.env))
   return c.json({ connector: info })
 })
 
@@ -27,11 +27,11 @@ connector.get('/', async (c) => {
  * immediately, which is also the "I pasted it somewhere I shouldn't have" fix.
  */
 connector.post('/key', async (c) => {
-  const key = await issueKey(c.env, workspaceOf(c.req.raw))
+  const key = await issueKey(c.env, await workspaceOf(c.req.raw, c.env))
   return c.json({ key, ...snippetFor(new URL(c.req.url).origin, key) })
 })
 
 connector.delete('/key', async (c) => {
-  await revokeKey(c.env, workspaceOf(c.req.raw))
+  await revokeKey(c.env, await workspaceOf(c.req.raw, c.env))
   return c.json({ ok: true })
 })

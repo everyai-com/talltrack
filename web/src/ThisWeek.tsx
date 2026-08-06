@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ProviderCapability } from './App'
 
 type Post = {
   id: string
@@ -7,7 +8,8 @@ type Post = {
   reach: number
   stranger_takeaway: string | null
   created_at: string
-  outcome: string | null
+  outcome: 'published' | 'published_after_edit' | 'rejected' | null
+  published_body: string | null
 }
 
 type WeekData = {
@@ -17,22 +19,44 @@ type WeekData = {
   profile: { who: string; audience: string; fromCalls: number } | null
 }
 
+type SyncResult = {
+  provider: string
+  readReady: boolean
+  found: number
+  saved: number
+  failed: number
+  skippedReason?: string
+}
+
+type RunSummary = {
+  wrote?: number
+  dropped?: number
+  nothingBecause?: string | null
+  sync?: SyncResult[]
+  includedCalls?: Array<{ id: string; title: string; occurredAt: string; source: string }>
+  receipt?: { model: string; inputTokens: number; outputTokens: number }
+}
+
 /**
  * The front door: this week's posts, or the honest zero with its reason.
- * The write runs on the person's own Claude and takes a minute or two — the
- * waiting copy says what is actually happening, never a bare spinner.
+ * Feedback lives beside the post so the taste loop never becomes a separate
+ * admin screen.
  */
-export function ThisWeek({ ready }: { ready: boolean }) {
+export function ThisWeek({ ready, capabilities }: { ready: boolean; capabilities: Record<string, ProviderCapability> }) {
   const [data, setData] = useState<WeekData | null>(null)
   const [writing, setWriting] = useState(false)
   const [phase, setPhase] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
+  const [lastRun, setLastRun] = useState<RunSummary | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
+  const [editedBody, setEditedBody] = useState('')
+  const [savingOutcome, setSavingOutcome] = useState<string | null>(null)
 
   async function refresh() {
     try {
       const res = await fetch('/api/week')
-      setData((await res.json()) as WeekData)
+      if (res.ok) setData((await res.json()) as WeekData)
     } catch {
       /* the status line at the foot of the page covers reachability */
     }
@@ -45,6 +69,7 @@ export function ThisWeek({ ready }: { ready: boolean }) {
   async function write() {
     setWriting(true)
     setError(null)
+    setLastRun(null)
     setPhase(data && data.callsStored > 0 ? 'Reading your calls in full…' : 'Pulling your calls in…')
 
     const later = window.setTimeout(
@@ -54,7 +79,8 @@ export function ThisWeek({ ready }: { ready: boolean }) {
 
     try {
       const res = await fetch('/api/week/write', { method: 'POST' })
-      const body = (await res.json()) as { wrote?: number; nothingBecause?: string | null; error?: string }
+      const body = (await res.json()) as RunSummary & { error?: string }
+      setLastRun(body)
       if (!res.ok) {
         setError(body.error ?? 'That didn’t work. Try again.')
         return
@@ -69,7 +95,35 @@ export function ThisWeek({ ready }: { ready: boolean }) {
     }
   }
 
+  async function recordOutcome(post: Post, outcome: 'published' | 'published_after_edit' | 'rejected', body?: string) {
+    setSavingOutcome(post.id)
+    setError(null)
+    try {
+      const res = await fetch(`/api/posts/${encodeURIComponent(post.id)}/outcome`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          outcome,
+          ...(outcome === 'published_after_edit' ? { publishedBody: body } : {}),
+          ...(outcome === 'rejected' ? { rejectReason: 'Skipped from the TallTrack front door.' } : {}),
+        }),
+      })
+      const response = (await res.json()) as { error?: string }
+      if (!res.ok) {
+        setError(response.error ?? 'Couldn’t save that outcome. Try again.')
+        return
+      }
+      setEditing(null)
+      await refresh()
+    } catch {
+      setError('Couldn’t save that outcome. Try again.')
+    } finally {
+      setSavingOutcome(null)
+    }
+  }
+
   const posts = data?.posts ?? []
+  const readableCallCount = lastRun?.includedCalls?.length ?? 0
 
   return (
     <>
@@ -82,22 +136,105 @@ export function ThisWeek({ ready }: { ready: boolean }) {
           </p>
           {posts.map((post) => (
             <article className="card post" key={post.id}>
+              <div className="post-head">
+                <span className="post-overline">The tension</span>
+                <span className="post-meta">
+                  {new Date(post.created_at.replace(' ', 'T') + 'Z').toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                  {' · '}
+                  {post.body.length.toLocaleString()} characters
+                </span>
+              </div>
               <p className="post-tension">{post.tension}</p>
-              <div className="post-body">{post.body}</div>
+              {(() => {
+                const publishedBody = post.outcome === 'published_after_edit' && post.published_body ? post.published_body : post.body
+                return editing === post.id ? (
+                  <textarea
+                    className="edit-body"
+                    value={editedBody}
+                    onChange={(event) => setEditedBody(event.target.value)}
+                    aria-label="The version you published"
+                  />
+                ) : (
+                  <div className="post-body">{publishedBody}</div>
+                )
+              })()}
               <div className="post-foot">
-                <button
-                  type="button"
-                  className="ghost"
-                  onClick={() => {
-                    void navigator.clipboard?.writeText(post.body)
-                    setCopied(post.id)
-                    setTimeout(() => setCopied(null), 1600)
-                  }}
-                >
-                  {copied === post.id ? 'Copied' : 'Copy'}
-                </button>
+                {editing === post.id ? (
+                  <>
+                    <button
+                      type="button"
+                      className="primary"
+                      disabled={savingOutcome === post.id || editedBody.trim().length === 0}
+                      onClick={() => void recordOutcome(post, 'published_after_edit', editedBody)}
+                    >
+                      {savingOutcome === post.id ? 'Saving…' : 'Save published version'}
+                    </button>
+                    <button type="button" className="link" onClick={() => setEditing(null)}>
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(
+                          post.outcome === 'published_after_edit' && post.published_body ? post.published_body : post.body,
+                        )
+                        setCopied(post.id)
+                        setTimeout(() => setCopied(null), 1600)
+                      }}
+                    >
+                      {copied === post.id ? 'Copied' : 'Copy'}
+                    </button>
+                    {!post.outcome && (
+                      <div className="outcome-actions" aria-label="What did you do with this post?">
+                        <button
+                          type="button"
+                          className="ghost"
+                          disabled={savingOutcome === post.id}
+                          onClick={() => void recordOutcome(post, 'published')}
+                        >
+                          Published
+                        </button>
+                        <button
+                          type="button"
+                          className="ghost"
+                          disabled={savingOutcome === post.id}
+                          onClick={() => {
+                            setEditing(post.id)
+                            setEditedBody(post.body)
+                          }}
+                        >
+                          Edit &amp; publish
+                        </button>
+                        <button
+                          type="button"
+                          className="link outcome-skip"
+                          disabled={savingOutcome === post.id}
+                          onClick={() => void recordOutcome(post, 'rejected')}
+                        >
+                          Skip
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
                 {post.stranger_takeaway && <span className="fine">A stranger takes away: {post.stranger_takeaway}</span>}
               </div>
+              {post.outcome && (
+                <p className="outcome-status">
+                  {post.outcome === 'published'
+                    ? 'Marked published — this becomes a future voice example.'
+                    : post.outcome === 'published_after_edit'
+                      ? 'Saved as published — the edited version becomes a future voice example.'
+                      : 'Skipped. It will not be used as a voice example.'}
+                </p>
+              )}
             </article>
           ))}
         </>
@@ -112,7 +249,26 @@ export function ThisWeek({ ready }: { ready: boolean }) {
         </>
       )}
 
-      {ready && (
+      {lastRun && (
+        <div className="card run-summary" aria-live="polite">
+          <h2>Last run</h2>
+          <p>
+            Included {readableCallCount} {readableCallCount === 1 ? 'call' : 'calls'}
+            {lastRun.receipt?.model ? ` · ${lastRun.receipt.model}` : ''}
+            {lastRun.receipt ? ` · ${lastRun.receipt.inputTokens + lastRun.receipt.outputTokens} tokens` : ''}.
+          </p>
+          {lastRun.sync?.map((result) => (
+            <p className="fine" key={result.provider}>
+              {result.skippedReason
+                ? result.skippedReason
+                : `${result.provider}: found ${result.found}, saved ${result.saved}${result.failed ? `, ${result.failed} failed` : ''}.`}
+            </p>
+          ))}
+          {lastRun.wrote === 0 && lastRun.nothingBecause && <p className="run-reason">No post survived: {lastRun.nothingBecause}</p>}
+        </div>
+      )}
+
+      {ready ? (
         <div className="card">
           <h2>{posts.length > 0 ? 'Write again' : 'Write this week’s posts'}</h2>
           <p>
@@ -125,7 +281,23 @@ export function ThisWeek({ ready }: { ready: boolean }) {
           </button>
           {error && <p className="error">{error}</p>}
         </div>
+      ) : (
+        <div className="card write-blocked">
+          <h2>Ready when a readable call recorder is connected</h2>
+          <p>
+            TallTrack can write from Fathom today. Gong and Fireflies can connect, but their transcript readers are not
+            ready yet.
+          </p>
+          {Object.entries(capabilities)
+            .filter(([, capability]) => !capability.readReady)
+            .map(([provider, capability]) => (
+              <p className="fine" key={provider}>
+                {capability.reason}
+              </p>
+            ))}
+        </div>
       )}
+      {error && !ready && <p className="error">{error}</p>}
     </>
   )
 }

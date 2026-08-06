@@ -1,5 +1,5 @@
-import { EngineError, engineErrorFor, type Engine, type EngineCredential, type RunRequest, type RunResult } from './types'
-import { claudeAuthHeaders } from '../providers/claude-credential'
+import { EngineError, engineErrorFor, type Engine, type EngineCredential, type RunRequest, type RunResult } from './types.ts'
+import { claudeAuthHeaders } from '../providers/claude-credential.ts'
 
 /**
  * Claude over the user's own credential. Four rules here were learned in

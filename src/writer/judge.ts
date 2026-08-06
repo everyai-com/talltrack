@@ -1,6 +1,6 @@
-import type { Engine } from '../engine'
-import { extractJson, type Draft } from './write'
-import { checkQuotes, type QuoteCheck } from './quote-check'
+import type { Engine } from '../engine/index.ts'
+import { extractJson, type Draft } from './write.ts'
+import { checkQuotes, type QuoteCheck } from './quote-check.ts'
 
 /**
  * The judge.

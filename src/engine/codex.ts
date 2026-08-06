@@ -1,4 +1,4 @@
-import { EngineError, engineErrorFor, type Engine, type EngineCredential, type RunRequest, type RunResult } from './types'
+import { EngineError, engineErrorFor, type Engine, type EngineCredential, type RunRequest, type RunResult } from './types.ts'
 
 const API = 'https://api.openai.com/v1/responses'
 

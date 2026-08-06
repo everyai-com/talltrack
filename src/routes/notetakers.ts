@@ -25,13 +25,15 @@ import {
   removeNotetaker,
   sealCredential,
 } from '../db/notetakers'
+import { PROVIDER_CAPABILITIES } from '../ingest/sync'
 
 export const notetakers = new Hono<{ Bindings: Env }>()
 
 const FIREFLIES_PENDING_PREFIX = 'fireflies-oauth:'
 
 notetakers.get('/', async (c) => {
-  return c.json({ notetakers: await listNotetakers(c.env, workspaceOf(c.req.raw)) })
+  const workspaceId = await workspaceOf(c.req.raw, c.env)
+  return c.json({ notetakers: await listNotetakers(c.env, workspaceId), capabilities: PROVIDER_CAPABILITIES })
 })
 
 /**
@@ -48,7 +50,11 @@ notetakers.post('/:provider/start', async (c) => {
   const provider = c.req.param('provider')
   if (!isNotetaker(provider)) return c.json({ error: 'Unknown notetaker.' }, 404)
 
-  const workspaceId = workspaceOf(c.req.raw)
+  const workspaceId = await workspaceOf(c.req.raw, c.env)
+  const existing = await getNotetaker(c.env, workspaceId, provider)
+  if (existing?.status === 'ACTIVE') {
+    return c.json({ error: `${NOTETAKER_LABEL[provider]} is already connected. Disconnect it first to reconnect.` }, 409)
+  }
 
   try {
     if (provider === 'fireflies') {
@@ -130,7 +136,7 @@ notetakers.get('/:provider/status', async (c) => {
   const provider = c.req.param('provider')
   if (!isNotetaker(provider)) return c.json({ error: 'Unknown notetaker.' }, 404)
 
-  const workspaceId = workspaceOf(c.req.raw)
+  const workspaceId = await workspaceOf(c.req.raw, c.env)
   const row = await getNotetaker(c.env, workspaceId, provider)
   if (!row) return c.json({ status: 'NONE' })
   if (row.status === 'ACTIVE') return c.json({ status: 'ACTIVE' })
@@ -152,6 +158,6 @@ notetakers.get('/:provider/status', async (c) => {
 notetakers.delete('/:provider', async (c) => {
   const provider = c.req.param('provider')
   if (!isNotetaker(provider)) return c.json({ error: 'Unknown notetaker.' }, 404)
-  await removeNotetaker(c.env, workspaceOf(c.req.raw), provider)
+  await removeNotetaker(c.env, await workspaceOf(c.req.raw, c.env), provider)
   return c.json({ ok: true })
 })

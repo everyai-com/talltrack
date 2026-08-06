@@ -1,31 +1,21 @@
-import type { Engine } from '../engine'
-import { CONSTITUTION, MIN_VOICE_EXAMPLES, VOICE_PREAMBLE } from './constitution'
-import { WRITING_STYLE } from './style'
-import { FOUNDER_EXEMPLAR, LINKEDIN_TEMPLATE_LIBRARY, TEMPLATE_LOCK } from './references'
+import type { Engine } from '../engine/index.ts'
+import { CONSTITUTION, MIN_VOICE_EXAMPLES, VOICE_PREAMBLE } from './constitution.ts'
+import { AIOS_LINKEDIN_GUIDE } from './aios-guide.ts'
+import { WRITING_STYLE } from './style.ts'
+import { FOUNDER_EXEMPLAR } from './references.ts'
+import { SHAPE_LIBRARY } from './shape-library.generated.ts'
 
 /**
- * The writer, in phases — the shape AIOS actually writes in.
- *
- * The first version did everything in one call and returned prose inside a
- * JSON contract. Two problems, both learned the expensive way: a model asked
- * to fill a JSON string writes in a flatter register than one asked to write,
- * and a single call splitting attention across three posts gives each a third
- * of it. callcraft's founder said it plainly: "AI needs to think in phases."
- *
- * Phase 1 — FIND: read everything, name the 0–3 tensions worth a post. JSON,
- *           because this phase's output is data.
- * Phase 2 — WRITE: one call PER post. Full attention, whole transcripts in
- *           context, and the output is the post itself. No JSON anywhere near
- *           the prose.
- * Phase 3 — CUT: the editor's pass on each draft. Start later, end earlier,
- *           cut what the material doesn't pay for.
- *
- * The judge stays downstream and separate (drop, never revise). Extra calls
- * cost nothing marginal — the subscription is flat, and quality is the product.
+ * The writer reads the whole window once, writes the strongest zero-to-three
+ * posts in prose, and returns them to the separate judge. This is deliberately
+ * one pass: Callcraft's multi-stage compression and rewrite loop produced
+ * competent, repetitive copy. The user's own engine has enough context for the
+ * source material to stay whole.
  */
 
 export type CallInput = {
   id: string
+  source?: string
   title: string
   occurredAt: string
   /** The whole thing. Never a summary, never an extract. */
@@ -37,6 +27,8 @@ export type WriteContext = {
   publishedExamples?: string[]
   /** Who they sell to, in their own words. Shapes who the stranger test judges for. */
   audience?: string
+  /** Opt-in evaluation-only candidate count. Normal product runs stay at three. */
+  candidateLimit?: number
 }
 
 export type Draft = {
@@ -57,62 +49,71 @@ export type WriteResult = {
   outputTokens: number
 }
 
-/** Hard ceiling on how many posts a week can produce. Volume is the enemy. */
+/** Default ceiling on how many posts a week can produce. Volume is the enemy. */
 export const MAX_DRAFTS = 3
+/** A bounded, explicit evaluation override for comparing a larger candidate set. */
+export const MAX_EVALUATION_DRAFTS = 5
 
-// ─── Phase 1: find ───────────────────────────────────────────────────────────
-
-const FIND_SYSTEM = `${CONSTITUTION}
-
+/**
+ * The single editorial context shared by the in-app writer and MCP. Keeping
+ * this exported makes it possible to regression-test that both surfaces carry
+ * the same AIOS writing bar, examples, and learned audience.
+ */
+/**
+ * The physical shape that performs, measured across the top 300 posts (by
+ * likes) of the 3,152-post ACX creator corpus — not guessed. The founder's
+ * 2026-08-06 direction: the writer produced prose essays while every
+ * high-performing reference (including his own exemplar) is built in mobile
+ * blocks, so the shape is now stated as law at every level.
+ */
+export const SHAPE_LAW = `============================================================
+THE SHAPE THAT PERFORMS (measured on 3,152 posts, not guessed)
 ============================================================
-YOUR JOB RIGHT NOW: FIND, DON'T WRITE
+Across the 300 highest-engagement posts in the reference corpus:
+
+- The hook is ONE line, median 44 characters. Keep it under 60. A number
+  in the hook when the material has one.
+- 91% of all lines are under 60 characters. Write in mobile blocks of
+  1-3 short lines with blank lines between them. A paragraph longer
+  than 3 phone lines is a wall; break it or cut it.
+- Half the posts carry a numbered or arrow stack. When the material has
+  steps, receipts, or a list of facts, stack them one per line.
+- Around 1,400 characters total, laid out as 25-35 short lines — never
+  6 dense paragraphs.
+- The last line is one short sentence that lands.
+
+Default to this shape for everything. A genuinely lived story may run its
+lines a little longer, but even then paragraphs stay at 1-3 mobile lines.`
+
+/** The library rendered with its lock. Structure travels; words never do. */
+function renderShapeLibrary(): string {
+  const posts = SHAPE_LIBRARY.map(
+    (r, i) => `--- shape reference ${i + 1} (${r.creator}, ${r.likes.toLocaleString()} likes) ---\n${r.body}`,
+  ).join('\n\n')
+  return `============================================================
+SHAPE REFERENCES — STRUCTURE ONLY
 ============================================================
-Read every transcript in full. Then name the tensions worth a post — at most
-${MAX_DRAFTS}, and fewer is usually right. Do not write the posts yet.
+${SHAPE_LIBRARY.length} of the highest-engagement posts from the corpus. Study how they are
+BUILT: the one-line hook, the short-line rhythm, the stacks, the landing.
 
-Return ONLY JSON, no prose and no code fence:
+The lock: nothing else transfers. Their facts, numbers, names, offers,
+tools, hooks, CTAs, hashtags and phrases were theirs to use — yours come
+from the transcripts or not at all. Where a reference uses language the
+style law bans (hype, hashtags, comment-farming closers), the style law
+wins: copy the skeleton, never the skin.
 
-{
-  "stories": [
-    {
-      "tension": "the one-sentence tension",
-      "call_ids": ["the calls that carry it"],
-      "material": "one sentence on the concrete material that funds it — the scene, the number, the quote"
-    }
-  ],
-  "nothing_because": null
+${posts}`
 }
 
-If nothing here deserves a post, return:
-{ "stories": [], "nothing_because": "one plain sentence saying what these calls were and what would have made a post" }
-
-That is a real answer. Use it whenever it is true.`
-
-export type Story = { tension: string; callIds: string[]; material: string }
-
-export function parseStories(text: string): { stories: Story[]; nothingBecause?: string } {
-  const parsed = extractJson(text) as { stories?: unknown; nothing_because?: unknown }
-  const stories: Story[] = (Array.isArray(parsed.stories) ? parsed.stories : [])
-    .map((raw: { tension?: unknown; call_ids?: unknown; material?: unknown }) => ({
-      tension: typeof raw.tension === 'string' ? raw.tension.trim() : '',
-      callIds: Array.isArray(raw.call_ids) ? raw.call_ids.filter((v): v is string => typeof v === 'string') : [],
-      material: typeof raw.material === 'string' ? raw.material.trim() : '',
-    }))
-    .filter((s) => s.tension.length > 0)
-    .slice(0, MAX_DRAFTS)
-
-  const nothingBecause =
-    typeof parsed.nothing_because === 'string' && parsed.nothing_because.trim()
-      ? parsed.nothing_because.trim()
-      : undefined
-
-  return { stories, nothingBecause }
-}
-
-// ─── Phase 2: write one post, as prose ───────────────────────────────────────
-
-function writeSystem(ctx: WriteContext): string {
-  const parts = [CONSTITUTION, WRITING_STYLE, FOUNDER_EXEMPLAR, TEMPLATE_LOCK, LINKEDIN_TEMPLATE_LIBRARY]
+export function buildEditorialContext(ctx: WriteContext = {}): string {
+  const parts = [
+    CONSTITUTION,
+    WRITING_STYLE,
+    AIOS_LINKEDIN_GUIDE,
+    SHAPE_LAW,
+    FOUNDER_EXEMPLAR,
+    renderShapeLibrary(),
+  ]
 
   const examples = ctx.publishedExamples ?? []
   if (examples.length >= MIN_VOICE_EXAMPLES) {
@@ -127,50 +128,46 @@ function writeSystem(ctx: WriteContext): string {
     )
   }
 
-  parts.push(`============================================================
-YOUR JOB RIGHT NOW: WRITE ONE POST
+  return parts.join('\n\n')
+}
+
+function writeSystem(ctx: WriteContext, maxDrafts: number): string {
+  return `${buildEditorialContext(ctx)}
+
 ============================================================
-You will be given the transcripts and ONE tension. Write the one post that
-tension deserves. All of your attention on this single post.
+YOUR JOB RIGHT NOW: WRITE THE BEST POSTS THIS WINDOW EARNS
+============================================================
+Read every transcript in the user message before deciding. Write zero to
+${maxDrafts} posts. Fewer is usually right. The first post must be the strongest
+one. Add another only when it has a genuinely different tension and the calls
+support it; never make variants of the same idea just to fill the quota.
+
+Do the editorial thinking silently. The body of each post must not be a
+summary, outline, framework, or transcript recap. Build it in the measured
+shape: one-line hook under 60 characters, mobile blocks of 1-3 short lines,
+stacks for receipts, a short last line that lands. No CTA, no question
+ending, no padding to a word count — the shape is the container, the
+transcripts are the only content.
 
 QUOTATION MARKS ARE A VERBATIM CLAIM. Text inside quote marks must appear in
 the transcript word for word — an ellipsis may elide a middle, nothing else may
 change. When you want to render what someone said and you don't have their
 exact words, write it as paraphrase WITHOUT quote marks: he told me the mistake
-was mine — not "the mistake was yours". The reference posts quote freely;
-their quotes were theirs to make. Yours must be real.
+was mine — not "the mistake was yours". Yours must be real.
 
-Return ONLY the post itself — the exact text the person will paste. No JSON,
-no preamble, no commentary, no "Here's the post", no title line, no fences.
-The first line of your reply is the first line of the post.`)
+Return ONLY the tagged contract below. Do not return JSON. Do not put any
+headings inside a post body. The text between BODY and </post> is paste-ready.
 
-  return parts.join('\n\n')
+<post>
+TENSION: one plain sentence naming the tension
+CALLS: exact call ids separated by commas
+BODY:
+the exact text the person will paste
+</post>
+
+If there is no post, return only:
+<nothing>one plain sentence explaining why these calls do not earn a post</nothing>`
 }
-
-// ─── Phase 3: the cut ────────────────────────────────────────────────────────
-
-const CUT_SYSTEM = `${WRITING_STYLE}
-
-============================================================
-YOUR JOB RIGHT NOW: THE EDITOR'S CUT
-============================================================
-You are the editor reading a finished draft. Make it tighter and truer without
-adding a single new fact.
-
-- Start later. If the post warms up before it begins, cut the warm-up.
-- End earlier. If the last lines restate what the reader already got, cut them.
-- Cut every line the material doesn't pay for — transitions, hedges, second
-  examples that prove the same point, anything that only sounds good.
-- Keep every quotation byte-for-byte or remove its quote marks. Never reword
-  text inside quotation marks. If you suspect a quote is a paraphrase wearing
-  quote marks, strip the marks and keep the line — a paraphrase is honest, a
-  fake quote is not.
-- Add nothing. No new facts, numbers, names, or claims. This is a cut, not a
-  rewrite.
-- If the draft is already tight, change little. A light hand is a valid edit.
-
-Return ONLY the final post text. No commentary, no fences. The first line of
-your reply is the first line of the post.`
 
 /** Strip the wrappers models sometimes add around prose they were told not to wrap. */
 export function cleanPost(text: string): string {
@@ -181,7 +178,35 @@ export function cleanPost(text: string): string {
   return out.trim()
 }
 
-// ─── The phases, assembled ───────────────────────────────────────────────────
+export type ParsedDraft = Pick<Draft, 'body' | 'tension' | 'callIds'>
+
+/**
+ * Parse the one-pass prose contract. The body is deliberately outside JSON so
+ * the model is not forced to write prose in a data register.
+ */
+export function parseDrafts(text: string, limit = MAX_DRAFTS): { drafts: ParsedDraft[]; nothingBecause?: string } {
+  const nothing = /<nothing>\s*([\s\S]*?)\s*<\/nothing>/iu.exec(text)?.[1]?.trim()
+  const drafts: ParsedDraft[] = []
+  const blocks = text.matchAll(/<post\b[^>]*>([\s\S]*?)<\/post>/giu)
+  const max = Math.min(MAX_EVALUATION_DRAFTS, Math.max(1, Math.floor(limit)))
+
+  for (const match of blocks) {
+    if (drafts.length >= max) break
+    const block = match[1] ?? ''
+    const tension = /^\s*tension\s*:\s*(.+?)\s*$/imu.exec(block)?.[1]?.trim() ?? ''
+    const callsText = /^\s*calls?\s*:\s*(.+?)\s*$/imu.exec(block)?.[1]?.trim() ?? ''
+    const bodyMatch = /^\s*body\s*:\s*\n([\s\S]*)$/imu.exec(block)
+    const body = bodyMatch?.[1] ? cleanPost(bodyMatch[1]) : ''
+    const callIds = callsText
+      .split(/[,\n]/u)
+      .map((id) => id.trim())
+      .filter(Boolean)
+
+    if (tension && body && callIds.length > 0) drafts.push({ body, tension, callIds })
+  }
+
+  return { drafts, nothingBecause: nothing || undefined }
+}
 
 function renderCalls(calls: CallInput[]): string {
   return calls
@@ -197,6 +222,7 @@ function escapeAttr(s: string): string {
   return s.replace(/"/g, "'").replace(/[<>]/g, '')
 }
 
+/** Kept for profile JSON parsing; writer output itself is intentionally not JSON. */
 export function extractJson(text: string): unknown {
   const start = text.indexOf('{')
   const end = text.lastIndexOf('}')
@@ -209,71 +235,29 @@ export async function write(engine: Engine, calls: CallInput[], ctx: WriteContex
     return { drafts: [], nothingBecause: 'No calls this week.', model: '', inputTokens: 0, outputTokens: 0 }
   }
 
+  const limit = Math.min(MAX_EVALUATION_DRAFTS, Math.max(1, Math.floor(ctx.candidateLimit ?? MAX_DRAFTS)))
   const transcripts = `Here are the calls. Read all of them before anything else.\n\n${renderCalls(calls)}`
-  let inputTokens = 0
-  let outputTokens = 0
-  let model = ''
+  const written = await engine.run({
+    system: writeSystem(ctx, limit),
+    user: transcripts,
+    maxOutputTokens: 2400,
+    temperature: 1,
+  })
 
-  const track = (res: { model: string; inputTokens: number; outputTokens: number }) => {
-    model = res.model
-    inputTokens += res.inputTokens
-    outputTokens += res.outputTokens
-  }
-
-  // Phase 1 — find.
-  const found = await engine.run({ system: FIND_SYSTEM, user: transcripts, maxOutputTokens: 2000, temperature: 1 })
-  track(found)
-  const { stories, nothingBecause } = parseStories(found.text)
-
-  if (stories.length === 0) {
-    return {
-      drafts: [],
-      nothingBecause: nothingBecause ?? 'Nothing in these calls carried a story worth publishing.',
-      model,
-      inputTokens,
-      outputTokens,
-    }
-  }
-
-  // Phases 2 and 3 — one post at a time, full attention each. Sequential on
-  // purpose: subscriptions rate-limit hard, and parallel long-context calls
-  // are exactly what trips it.
-  const drafts: Draft[] = []
-  const system = writeSystem(ctx)
-
-  for (const story of stories) {
-    try {
-      const drafted = await engine.run({
-        system,
-        user: `${transcripts}\n\n============================================================\nTHE TENSION FOR THIS POST\n============================================================\n${story.tension}\n\nThe material that funds it: ${story.material}\n\nWrite the post.`,
-        maxOutputTokens: 2000,
-        temperature: 1,
-      })
-      track(drafted)
-
-      const cut = await engine.run({
-        system: CUT_SYSTEM,
-        user: cleanPost(drafted.text),
-        maxOutputTokens: 2000,
-        temperature: 1,
-      })
-      track(cut)
-
-      const body = cleanPost(cut.text)
-      if (body.length > 0) drafts.push({ body, tension: story.tension, callIds: story.callIds })
-    } catch {
-      // One story failing must not take the others down — same rule as the
-      // judge. The story is skipped, not retried; a retry loop is how packs
-      // of mediocrity get made.
-    }
-  }
+  const parsed = parseDrafts(written.text, limit)
+  const knownCallIds = new Set(calls.map((call) => call.id))
+  const drafts: Draft[] = parsed.drafts
+    .map((draft) => ({
+      ...draft,
+      callIds: draft.callIds.filter((id) => knownCallIds.has(id)),
+    }))
+    .filter((draft) => draft.callIds.length > 0)
 
   return {
     drafts,
-    nothingBecause:
-      drafts.length === 0 ? 'The writing didn’t survive its own edit this week. The calls are still here — try again.' : undefined,
-    model,
-    inputTokens,
-    outputTokens,
+    nothingBecause: drafts.length === 0 ? parsed.nothingBecause ?? 'Nothing in these calls carried a story worth publishing.' : undefined,
+    model: written.model,
+    inputTokens: written.inputTokens,
+    outputTokens: written.outputTokens,
   }
 }

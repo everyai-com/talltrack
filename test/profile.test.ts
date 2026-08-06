@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 import { audienceContext, loadProfile, parseProfile, saveProfile } from '../src/profile'
-import { newExternalIds } from '../src/ingest/sync'
+import { newExternalIds, PROVIDER_CAPABILITIES, syncActiveNotetakers } from '../src/ingest/sync'
 
 describe('parsing a derived profile', () => {
   it('reads a clean response', () => {
@@ -61,5 +61,20 @@ describe('sync dedup', () => {
   it('pulls only calls not already stored', () => {
     const listed = [{ externalId: 'a' }, { externalId: 'b' }, { externalId: '' }, { externalId: 'c' }]
     expect(newExternalIds(listed, new Set(['b']))).toEqual(['a', 'c'])
+  })
+})
+
+describe('provider readiness', () => {
+  it('makes connect-only providers explicit and returns one result per provider', async () => {
+    expect(PROVIDER_CAPABILITIES.fathom.readReady).toBe(true)
+    expect(PROVIDER_CAPABILITIES.gong.readReady).toBe(false)
+    expect(PROVIDER_CAPABILITIES.fireflies.reason).toContain('transcript reading')
+
+    const results = await syncActiveNotetakers(env, 'no-provider-workspace')
+    expect(results.map((result) => result.provider)).toEqual(['fathom', 'gong', 'fireflies'])
+    expect(results.find((result) => result.provider === 'gong')).toMatchObject({
+      readReady: false,
+      skippedReason: expect.stringContaining('transcript'),
+    })
   })
 })

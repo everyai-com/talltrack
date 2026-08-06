@@ -20,7 +20,7 @@ function isAuthId(value: unknown): value is string {
 }
 
 connect.get('/', async (c) => {
-  return c.json({ connections: await listConnections(c.env, workspaceOf(c.req.raw)) })
+  return c.json({ connections: await listConnections(c.env, await workspaceOf(c.req.raw, c.env)) })
 })
 
 /**
@@ -40,7 +40,7 @@ connect.post('/claude/start', async (c) => {
 
 /** Step two: exchange the pasted `code#state` for the subscription token. */
 connect.post('/claude/finish', async (c) => {
-  const workspaceId = workspaceOf(c.req.raw)
+  const workspaceId = await workspaceOf(c.req.raw, c.env)
   const body: { authId?: unknown; code?: unknown } = await c.req
     .json<{ authId?: unknown; code?: unknown }>()
     .catch(() => ({}))
@@ -70,6 +70,6 @@ connect.post('/claude/finish', async (c) => {
 })
 
 connect.delete('/claude', async (c) => {
-  await disconnect(c.env, workspaceOf(c.req.raw), 'claude')
+  await disconnect(c.env, await workspaceOf(c.req.raw, c.env), 'claude')
   return c.json({ ok: true })
 })

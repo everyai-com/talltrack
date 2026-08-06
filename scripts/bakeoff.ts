@@ -11,8 +11,9 @@
  *
  * Usage:
  *   ANTHROPIC_API_KEY=... node --experimental-strip-types scripts/bakeoff.ts generate
- *   node --experimental-strip-types scripts/bakeoff.ts pairs
- *   node --experimental-strip-types scripts/bakeoff.ts score
+ *   node --experimental-strip-types scripts/bakeoff.ts pairs published
+ *   node --experimental-strip-types scripts/bakeoff.ts score published
+ *   node --experimental-strip-types scripts/bakeoff.ts pairs callcraft
  *
  * Nothing here writes to Cloudflare. The corpus is real call material and never
  * leaves the machine.
@@ -102,29 +103,45 @@ async function generate() {
  * person scoring cannot tell which side is ours — including when that person
  * is the one who built it.
  */
+type ComparisonTarget = 'published' | 'callcraft'
+
+function comparisonTarget(): ComparisonTarget {
+  const target = process.argv[3] ?? 'published'
+  if (target !== 'published' && target !== 'callcraft') {
+    console.error('Comparison target must be published or callcraft.')
+    process.exit(1)
+  }
+  return target
+}
+
 function pairs() {
+  const target = comparisonTarget()
   const ours = read('out').filter((f) => !f.name.endsWith('.nothing'))
-  const theirs = [...read('callcraft'), ...read('published')]
+  const theirs = read(target)
 
   if (ours.length === 0 || theirs.length === 0) {
-    console.error('Need generated posts and something to compare against.')
+    console.error(`Need generated posts and ${target} comparison posts.`)
     process.exit(1)
   }
 
+  const pairCount = target === 'callcraft' ? Math.min(10, ours.length) : 20
+  const oursPool = target === 'published' ? [...ours, ...ours] : ours
+  const theirsPool = [...theirs, ...theirs]
+
   const lines: string[] = [
-    '# Blind pairs',
+    `# Blind pairs — ${target}`,
     '',
-    'For each pair, write A or B in the verdict column of corpus/scores.csv.',
+    `For each pair, write A or B in the verdict column of corpus/scores-${target}.csv.`,
     'Do not look at corpus/out/ first. Which one would you actually publish?',
     '',
   ]
 
   const rows: string[] = ['pair,left,right,verdict']
 
-  shuffle(ours, 7)
-    .slice(0, 20)
+  shuffle(oursPool, 7)
+    .slice(0, pairCount)
     .forEach((mine, i) => {
-      const other = theirs[i % theirs.length]!
+      const other = shuffle(theirsPool, 11 + i)[i % theirsPool.length]!
       const mineLeft = (i + Number(mine.name.length)) % 2 === 0
       const [left, right] = mineLeft ? [mine, other] : [other, mine]
 
@@ -132,13 +149,19 @@ function pairs() {
       rows.push(`${i + 1},${mineLeft ? 'ours' : 'other'},${mineLeft ? 'other' : 'ours'},`)
     })
 
-  writeFileSync(join(CORPUS, 'pairs.md'), lines.join('\n'))
-  writeFileSync(join(CORPUS, 'scores.csv'), rows.join('\n') + '\n')
-  console.log(`Wrote ${join(CORPUS, 'pairs.md')} and scores.csv. Fill in the verdict column, then run: score`)
+  writeFileSync(join(CORPUS, `pairs-${target}.md`), lines.join('\n'))
+  writeFileSync(join(CORPUS, `scores-${target}.csv`), rows.join('\n') + '\n')
+  console.log(`Wrote pairs-${target}.md and scores-${target}.csv. Fill in verdicts, then run: score ${target}`)
 }
 
 function score() {
-  const csv = readFileSync(join(CORPUS, 'scores.csv'), 'utf8').trim().split('\n').slice(1)
+  const target = comparisonTarget()
+  const path = join(CORPUS, `scores-${target}.csv`)
+  if (!existsSync(path)) {
+    console.error(`Missing ${path}. Run: pairs ${target}`)
+    process.exit(1)
+  }
+  const csv = readFileSync(path, 'utf8').trim().split('\n').slice(1)
   let ours = 0
   let judged = 0
 
@@ -156,12 +179,16 @@ function score() {
   }
 
   const rate = ours / judged
-  console.log(`\nOurs won ${ours} of ${judged} (${Math.round(rate * 100)}%)`)
-  console.log(
-    rate >= 0.7
-      ? 'G1 PASSES. The thesis holds — carry on to S3.'
-      : 'G1 FAILS. Stop. Do not tune the prompt; §0 was wrong and needs a different diagnosis.',
-  )
+  console.log(`\nTallTrack won ${ours} of ${judged} ${target} comparisons (${Math.round(rate * 100)}%)`)
+  if (target === 'callcraft') {
+    console.log(
+      rate >= 0.7
+        ? 'G1 PASSES. The thesis holds — carry on to S3.'
+        : 'G1 FAILS. Stop. Do not tune the prompt; §0 was wrong and needs a different diagnosis.',
+    )
+  } else {
+    console.log('This is the founder-bar comparison. It is not a G1 Callcraft score.')
+  }
 }
 
 const cmd = process.argv[2]
@@ -169,6 +196,6 @@ if (cmd === 'generate') await generate()
 else if (cmd === 'pairs') pairs()
 else if (cmd === 'score') score()
 else {
-  console.log('Usage: bakeoff.ts generate | pairs | score')
+  console.log('Usage: bakeoff.ts generate | pairs published|callcraft | score published|callcraft')
   process.exit(1)
 }

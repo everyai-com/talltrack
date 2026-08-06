@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ProviderCapability } from './App'
 
 export type NotetakerConnection = {
   provider: string
@@ -26,9 +27,11 @@ const MAX_POLLS = 48
  */
 export function Notetakers({
   connections,
+  capabilities,
   onChange,
 }: {
   connections: NotetakerConnection[]
+  capabilities: Record<string, ProviderCapability>
   onChange: (next: NotetakerConnection[]) => void
 }) {
   const [busy, setBusy] = useState<string | null>(null)
@@ -49,7 +52,9 @@ export function Notetakers({
 
           if (data.status === 'ACTIVE') {
             setWaiting(null)
-            const list = await fetch('/api/notetakers').then((r) => r.json() as Promise<{ notetakers: NotetakerConnection[] }>)
+            const list = await fetch('/api/notetakers').then(
+              (r) => r.json() as Promise<{ notetakers: NotetakerConnection[] }>,
+            )
             onChange(list.notetakers)
             return
           }
@@ -107,11 +112,17 @@ export function Notetakers({
       <div className="rows">
         {PROVIDERS.map(({ id, label }) => {
           const conn = connections.find((c) => c.provider === id && c.status === 'ACTIVE')
+          const capability = capabilities[id]
           return (
             <div className="row" key={id}>
               <span className="row-label">
                 {label}
-                {conn && <span className="tick"> connected</span>}
+                {conn && (
+                  <span className={`tick${capability && !capability.readReady ? ' muted-tick' : ''}`}>
+                    {capability?.readReady === false ? ' connected · connect-only' : ' connected'}
+                  </span>
+                )}
+                {capability?.readReady === false && <span className="capability-note">{capability.reason}</span>}
               </span>
               {conn ? (
                 <button type="button" className="link" onClick={() => void remove(id)}>

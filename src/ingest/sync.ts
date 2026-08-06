@@ -1,4 +1,4 @@
-import { fetchTranscript, listCalls, type ComposioEnv, type Notetaker } from './composio'
+import { fetchTranscript, listCalls, NOTETAKERS, type ComposioEnv, type Notetaker } from './composio'
 import { saveCall, type Env as CallsEnv } from '../db/calls'
 import { getNotetaker } from '../db/notetakers'
 
@@ -13,10 +13,30 @@ import { getNotetaker } from '../db/notetakers'
 export type Env = ComposioEnv & CallsEnv & Pick<Cloudflare.Env, 'DB'>
 
 export type SyncResult = {
+  provider: Notetaker
+  /** Whether this provider can supply transcript material to the writer. */
+  readReady: boolean
   found: number
   saved: number
   /** Individual failures don't abort the pull; they're counted and reported. */
   failed: number
+  skippedReason?: string
+}
+
+export type ProviderCapability = {
+  readReady: boolean
+  reason: string | null
+}
+
+/** A green connection is not the same thing as a provider TallTrack can read. */
+export const PROVIDER_CAPABILITIES: Record<Notetaker, ProviderCapability> = {
+  fathom: { readReady: true, reason: null },
+  gong: { readReady: false, reason: 'Gong can connect, but transcript reading is not built yet.' },
+  fireflies: { readReady: false, reason: 'Fireflies can connect, but transcript reading is not built yet.' },
+}
+
+export function providerCapability(provider: Notetaker): ProviderCapability {
+  return PROVIDER_CAPABILITIES[provider]
 }
 
 /** Which of the listed calls aren't stored yet. Pure, so the dedup rule is testable. */
@@ -44,8 +64,20 @@ const MAX_PAGES = 4
 const MAX_NEW_PER_SYNC = 40
 
 export async function syncNotetaker(env: Env, workspaceId: string, provider: Notetaker): Promise<SyncResult> {
+  const capability = providerCapability(provider)
+  if (!capability.readReady) {
+    return {
+      provider,
+      readReady: false,
+      found: 0,
+      saved: 0,
+      failed: 0,
+      skippedReason: capability.reason ?? undefined,
+    }
+  }
+
   const connection = await getNotetaker(env, workspaceId, provider)
-  if (!connection || connection.status !== 'ACTIVE') return { found: 0, saved: 0, failed: 0 }
+  if (!connection || connection.status !== 'ACTIVE') return { provider, readReady: true, found: 0, saved: 0, failed: 0 }
 
   const { results } = await env.DB.prepare(
     `select source_id from calls where workspace_id = ?1 and source = ?2`,
@@ -89,5 +121,10 @@ export async function syncNotetaker(env: Env, workspaceId: string, provider: Not
     cursor = nextCursor
   }
 
-  return { found, saved, failed }
+  return { provider, readReady: true, found, saved, failed }
+}
+
+/** Sync every active provider and preserve a visible result for each one. */
+export async function syncActiveNotetakers(env: Env, workspaceId: string): Promise<SyncResult[]> {
+  return Promise.all(NOTETAKERS.map((provider) => syncNotetaker(env, workspaceId, provider)))
 }

@@ -1,13 +1,13 @@
-import type { Engine, EngineCredential } from '../engine'
-import { engineFor, judgeEngineFor } from '../engine'
-import { write, type CallInput, type Draft, type WriteContext } from './write'
-import { checkQuotes, dequoteUnmatched } from './quote-check'
-import { judge, CRAFT_MARKS, type Verdict } from './judge'
+import type { Engine, EngineCredential } from '../engine/index.ts'
+import { engineFor, judgeEngineFor } from '../engine/index.ts'
+import { write, type CallInput, type Draft, type WriteContext } from './write.ts'
+import { checkQuotes, dequoteUnmatched } from './quote-check.ts'
+import { judge, CRAFT_MARKS, type Verdict } from './judge.ts'
 
-export * from './write'
-export * from './judge'
-export * from './quote-check'
-export { CONSTITUTION } from './constitution'
+export * from './write.ts'
+export * from './judge.ts'
+export * from './quote-check.ts'
+export { CONSTITUTION } from './constitution.ts'
 
 export type Kept = { draft: Draft; verdict: Verdict }
 

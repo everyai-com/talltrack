@@ -2,6 +2,9 @@ import { env, SELF } from 'cloudflare:test'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { issueKey } from '../src/mcp/keys'
 import { saveCall } from '../src/db/calls'
+import { saveProfile } from '../src/profile'
+import { audienceContext, loadProfile } from '../src/profile'
+import { buildEditorialContext } from '../src/writer/write'
 
 const URL = 'https://talltrack.test/mcp'
 
@@ -16,6 +19,13 @@ beforeAll(async () => {
     durationS: 1800,
     providerUrl: null,
     transcript: 'Priya: the balance date was the whole problem.\nSam: and we signed off anyway.',
+  })
+  await saveProfile(env, 'solo', {
+    who: 'TallTrack founder.',
+    audience: 'Operators who need a clear week.',
+    voice: 'Direct and warm.',
+    derivedFromCalls: 1,
+    derivedAt: new Date().toISOString(),
   })
 })
 
@@ -66,10 +76,12 @@ describe('protocol', () => {
     expect(res.status).toBe(202)
   })
 
-  it('lists the four tools', async () => {
+  it('lists the six tools', async () => {
     const res = await rpc({ jsonrpc: '2.0', id: 2, method: 'tools/list' }, `Bearer ${key}`)
     const body = (await res.json()) as { result: { tools: Array<{ name: string }> } }
     expect(body.result.tools.map((t) => t.name).sort()).toEqual([
+      'connect_notetaker',
+      'notetaker_status',
       'read_call',
       'save_post',
       'this_week',
@@ -100,9 +112,14 @@ describe('tools', () => {
     expect(text).toContain('signed off anyway')
   })
 
-  it('writing_guide carries the constitution, including the licence to write nothing', async () => {
+  it('writing_guide carries the same full context as the browser writer', async () => {
     const text = await textOf(await call('writing_guide'))
     expect(text).toContain('You are allowed to return zero posts')
+    expect(text).toContain('Direct and warm.')
+    expect(text).toContain('AIOS LINKEDIN WRITING GUIDE')
+    expect(text).not.toContain('CALLCRAFT STRUCTURAL BLUEPRINT CATALOG')
+    const profile = await loadProfile(env, 'solo')
+    expect(text).toBe(buildEditorialContext({ audience: profile ? audienceContext(profile) : undefined, publishedExamples: [] }))
   })
 
   it('save_post lands on the front door', async () => {

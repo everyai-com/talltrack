@@ -1,8 +1,8 @@
-import { claudeEngine, CLAUDE_DEFAULT_MODEL, CLAUDE_JUDGE_MODEL } from './claude'
-import { codexEngine, CODEX_DEFAULT_MODEL, CODEX_JUDGE_MODEL } from './codex'
-import type { Engine, EngineCredential } from './types'
+import { claudeEngine, CLAUDE_DEFAULT_MODEL, CLAUDE_JUDGE_MODEL } from './claude.ts'
+import { codexEngine, CODEX_DEFAULT_MODEL, CODEX_JUDGE_MODEL } from './codex.ts'
+import type { Engine, EngineCredential } from './types.ts'
 
-export * from './types'
+export * from './types.ts'
 export { CLAUDE_DEFAULT_MODEL, CLAUDE_JUDGE_MODEL, CODEX_DEFAULT_MODEL, CODEX_JUDGE_MODEL }
 
 export function engineFor(cred: EngineCredential): Engine {

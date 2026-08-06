@@ -1,22 +1,21 @@
 /**
- * The 27 verbatim reference posts AIOS itself holds in the writer's context.
+ * Archived Callcraft reference material.
  *
- * This is the founder finding of 2026-07-21, learned twice now: a distillation
- * of these posts into abstract rules loses the structural DNA that makes them
- * work. TallTrack's first live run proved it a second time — the constitution
- * alone wrote well-behaved posts that were not as good as AIOS's. The verbatim
- * material IS the asset. Never distill it; re-port it if the source changes.
+ * FOUNDER_EXEMPLAR below remains part of the runtime quality bar. The verbatim
+ * Callcraft template library and TEMPLATE_LOCK are retained for offline
+ * comparison and provenance, but the production writer deliberately does not
+ * import them: TallTrack follows the author's material and AIOS register
+ * instead of forcing a borrowed template over every call.
  */
 
 // compiled verbatim from:
 // skills-source/zip-skills/linkedin-post-writer/references/suprava_sabat_template_reference.md
 // sha256 6f41acf80397e91a6e57aae2d5bbf075879ce8ca8a743e90c103d93ca6307a39
-// AIOS holds these 27 high-performing posts in the writer's context with a
-// template lock; the prior compilation distilled them into abstract rules and
-// lost the structural DNA (founder finding 2026-07-21: AIOS posts beat the
-// distillation). Creator-attribution lines are stripped per the source skill's
-// mandatory rule; everything else is verbatim. Structure reference ONLY —
-// facts, offers, numbers, tools, and CTAs in templates are never copied.
+// Historical Callcraft material retained for offline comparison only. It is
+// not imported by the production writer. Creator-attribution lines are
+// stripped per the source skill's mandatory rule; everything else is verbatim.
+// Structure reference ONLY — facts, offers, numbers, tools, and CTAs in
+// templates are never copied.
 export const LINKEDIN_TEMPLATE_LIBRARY = `TEMPLATE 1
 
 Get 100+ emails in less than 10 mins using LinkedIn 
@@ -1130,9 +1129,7 @@ And I will send it over to your DMs!
 
 #saas #saasgrowth #saasleads`
 
-/**
- * The template lock, as AIOS applies it. Structure is borrowed; nothing else.
- */
+/** Legacy Callcraft template lock; retained for offline comparison only. */
 export const TEMPLATE_LOCK = `============================================================
 REFERENCE POSTS — THE TEMPLATE LOCK
 ============================================================

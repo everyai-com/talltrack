@@ -460,3 +460,252 @@ short-fragment stacks are exactly what his best post is made of. Fixed:
 **Lesson, appended to the distillation law:** the register IS content. A style
 law that optimizes for tasteful prose can steer directly away from what the
 author actually publishes. The exemplar beats the rules when they disagree.
+
+---
+
+## 2026-08-01 — Fathom-first provider readiness, not green-check theater
+
+**Decision:** the write path syncs every provider entry but only reads from
+providers whose transcript adapter is ready. Fathom is `readReady`; Gong and
+Fireflies are explicitly `connect-only` with a reason shown in the UI and run
+summary.
+
+**Rejected — treating an ACTIVE connection as write-ready.** Connection proves
+only that OAuth or Composio approval completed. Pretending it also proves that
+TallTrack can list and read calls produces a silent empty week, which is harder
+to diagnose than a visible limitation.
+
+---
+
+## 2026-08-01 — One shared editorial context, with a human outcome loop
+
+**Decision:** the server writer and MCP `writing_guide` call the same exported
+context builder: constitution, writing style, founder exemplar, templates,
+derived audience/voice, and enough published examples for voice calibration.
+Published, edited, and rejected outcomes are recorded beside the post; only the
+first two feed future examples.
+
+**Rejected — maintaining separate prompts.** A browser run and a Claude
+conversation should not silently use different definitions of the founder's
+voice. **Rejected — leaving feedback as a free-form note.** Three explicit
+outcomes are measurable and keep the front door one click away from the taste
+loop.
+
+---
+
+## 2026-08-01 — Stateless access-cookie gate for founder dogfood
+
+**Decision:** when `TALLTRACK_ACCESS_TOKEN` is present, the browser must first
+exchange it for a signed, HttpOnly, seven-day cookie. The cookie contains only a
+fixed workspace id, expiry, nonce, and HMAC; MCP keeps its independent connector
+key.
+
+**Rejected — exposing the shared `solo` workspace publicly.** That would merge
+calls and credentials for every visitor. **Rejected — building full multi-user
+auth before proving the content loop.** The gate closes the immediate exposure
+without committing TallTrack to an identity model that the founder has not yet
+chosen.
+
+---
+
+## 2026-08-01 — Never replace an active notetaker during reconnect
+
+**Decision:** `POST /api/notetakers/:provider/start` returns a clear conflict
+when that provider is already ACTIVE. The person must disconnect first before a
+new Composio account can replace it.
+
+**Why:** the previous route wrote a new PENDING row after minting a link even
+when a working account existed. A stale screen or repeated click could then
+make a healthy connection look broken. A reconnect is an explicit destructive
+change to the current provider identity and should not happen accidentally.
+
+---
+
+## 2026-08-01 — Import Callcraft's structure, not its creator posts
+
+**Decision:** TallTrack now vendors Callcraft's compiled 24-entry LinkedIn
+reference blueprint catalog. The FIND phase chooses one exact blueprint per
+story; the WRITE phase receives that blueprint's hook, tension, beat map,
+evidence role, rhythm, and ending as a locked structure. If FIND omits or
+mistypes an id, TallTrack selects a deterministic fit-based fallback.
+
+The artifact is structural only. Callcraft's raw CSV corpus remains outside
+TallTrack and no source post body, creator name, URL, fact, offer, or
+attribution enters the runtime prompt. This preserves the useful shape signal
+without asking a founder's calls to imitate another creator's words.
+
+**Rejected — pasting the entire Callcraft corpus into the prompt.** It would
+inflate every paid run, increase copying and attribution risk, and make the
+writer blend several references. **Rejected — maintaining a second MCP-only
+prompt.** The catalog is part of `buildEditorialContext`, so browser and MCP
+writing receive the same quality bar.
+
+---
+
+## 2026-08-01 — Five-post checks are evaluation mode, not the weekly default
+
+**Decision:** the product keeps its normal three-draft ceiling. An explicit
+`/api/week/write?candidates=4` or `?candidates=5` request can create a bounded
+candidate set for a founder bake-off, and every candidate still goes through
+the full cut and independent judge. The front door does not opt into this
+higher-volume mode.
+
+**Why:** comparing several Callcraft shapes is useful while calibrating the
+writer, but routinely producing five paid drafts spends more, takes longer, and
+encourages volume over the single strongest story.
+
+---
+
+## 2026-08-01 — AIOS-first writer replaces Callcraft's runtime editorial layer
+
+**Decision:** TallTrack now writes the full call window in one user-engine call
+using the AIOS LinkedIn, humanization, Content Writer, constitution, founder
+exemplar, audience, and approved-post context. The response is tagged prose,
+not JSON; the body stays outside a data contract. The separate quote check and
+judge remain unchanged and still fail closed.
+
+**Rejected — adding Callcraft's Jasmin, Matt, or larger template catalog.** Satya
+does not like Callcraft's output; more of its structural DNA would enlarge the
+wrong quality bar. **Rejected — keeping FIND → WRITE → CUT.** The extra stages
+compress the material and normalize the prose. **Rejected — removing the judge
+and grounding checks.** Human writing still must not contain invented quotes or
+become a status update with no reader value.
+
+**Why it matters:** TallTrack is now an AIOS-quality writing product with
+Callcraft's reliable ingestion and safety plumbing, not a larger Callcraft.
+Approved posts remain taste references only; transcript calls remain the sole
+source of new facts.
+
+---
+
+## 2026-08-01 — Build the private bake-off from local first-party exports
+
+**Decision:** prepare the ignored bake-off corpus from 10 Fathom-style call
+exports in `Desktop/aios transcripts` and 10 posts authored by Satya in the
+local `scraper/circle.db`. The preparation script records source ids and names
+in a manifest but never prints or commits transcript/post bodies.
+
+**Rejected:** using Callcraft's creator CSVs as the human baseline, because
+those are third-party reference posts, not Satya's writing. **Rejected:**
+calling the existing TallTrack v1/v2 outputs a Callcraft baseline, because they
+were generated by TallTrack and are not comparable same-call outputs.
+
+**Why it matters:** G2 can be run honestly against Satya's own posts now. G1
+remains explicitly unscored until comparable Callcraft outputs for the same
+calls are supplied; a missing baseline is better than a fabricated win.
+
+---
+
+## 2026-08-06 — The measured shape becomes law, from the 3,152-post creator corpus
+
+**The founder's report, fourth round:** posts rejected as "not human like" —
+and a direct instruction to build on the ~3,150-post ACX creator corpus
+(Ruben Hassid 1,852, Michel Lieben 715, Jake Ward 585 posts with engagement
+data) "at all levels."
+
+**The measurement that reframed the problem.** Feature analysis of the top
+300 posts by likes vs TallTrack's output: their hook is one line (median 44
+chars) vs ours at 73–255; 91% of their lines are under 60 chars vs our
+0–29%; they are 25–35 short lines with stacks, ours were 6 dense paragraphs.
+Both prior register complaints ("not human", "not like AIOS") were really
+the same physical-shape miss — the founder's own exemplar is in the corpus
+shape.
+
+**Decision, three levels:**
+1. **Compiled shape library** — `scripts/compile-shape-library.ts` selects
+   the top 8 posts per creator by likes (24 total, engagement-measured, not
+   taste-guessed) into a generated module. Whole bodies travel as STRUCTURE
+   references under an explicit lock: facts, names, offers, hooks, CTAs and
+   phrases never transfer, and where a reference uses banned language the
+   style law wins.
+2. **SHAPE_LAW in the shared context** — the measured signature stated as
+   law in `buildEditorialContext`, so the browser writer and MCP
+   `writing_guide` carry it identically. The write prompt's "do not force a
+   template/list" clause was replaced: the shape is the container.
+3. **Deterministic shape check at the granular level** —
+   `src/writer/shape-check.ts` (same philosophy as the quote check: string
+   math, no model call). MCP `save_post` rejects essay-shaped bodies with
+   the specific misses so Claude can reshape and retry. Thresholds sit
+   looser than the medians (hook ≤80, ≥50% short lines, no block >220
+   chars) so a lived story passes and a wall of prose does not.
+
+**Partially reverses** the 2026-08-01 "AIOS-first" removal of Callcraft's
+reference material, on the founder's explicit instruction — but keeps its
+core finding: the abstract blueprints are still out; what returns is
+verbatim high-engagement structure, selection-over-catalog, which is the
+next step that decision itself recorded.
+
+**Also fixed:** `/api/week` returned rejected posts to the front door; they
+are now filtered in the query. Rejected drafts remain in the DB for the
+taste loop.
+
+---
+
+## 2026-08-01 — Local demo seed instead of weakening Fathom readiness
+
+
+**Decision:** add a local-only `/api/demo/seed` route and `npm run demo:seed`.
+It is enabled only by the uncommitted `TALLTRACK_DEMO_MODE=1` local variable,
+stores the same encrypted call shape as a real ingest, and shifts demo dates
+inside the automatic seven-day window.
+
+**Rejected:** making demo calls look like a successful Fathom sync, because
+that would blur the difference between imported evidence and fixture material.
+**Rejected:** exposing the route in production, because a transcript-import
+endpoint is an unnecessary privacy and tenancy risk.
+
+**Why it matters:** Satya can test Claude and the full writer/judge loop now,
+without waiting for Fathom. The production path remains fail-closed and still
+requires a real readable provider.
+
+---
+
+## 2026-08-01 — Use the installed Claude CLI for local bake-offs
+
+**Decision:** add a local `bakeoff:claude` harness that streams the full prompt
+through the installed Claude Code CLI, using Opus for writing and Sonnet for
+the independent judge. TallTrack's writer, quote check, and judge remain the
+code under test; the CLI supplies only authentication and model execution.
+
+**Rejected:** copying a Claude API key into `.dev.vars`, because the user
+already has an authenticated Claude subscription and the key would create a
+second credential path to protect. **Rejected:** treating the Codex adapter as
+browser-ready, because its account connection flow is not wired yet.
+
+**Why it matters:** the CLI smoke check passed authentication, but the first
+real bake-off was stopped by Claude's account spending cap until 3:30pm. The
+harness now surfaces that exact provider message without writing a partial
+result.
+
+---
+
+## 2026-08-06 — The MCP link is the product's front door: OAuth, one Approve, a fresh workspace
+
+**Decision (Satya):** new people onboard by adding the bare MCP URL in
+Claude. TallTrack now runs its own OAuth 2.1 server (the work the
+2026-07-31 connector decision queued): RFC 9728 + 8414 discovery off the
+401, RFC 7591 dynamic registration (public clients, PKCE S256 only), a
+one-button consent page, and a token endpoint with refresh. Approving
+creates a fresh `ws-…` workspace — no form, no email; the approval IS the
+account.
+
+**Mechanics worth recording:**
+- Clients and codes live in KV with TTLs; tokens live in D1 as SHA-256
+  hashes beside connector_keys. The code is deleted BEFORE the exchange —
+  same replay rule as the Fireflies callback.
+- `/mcp` accepts either credential: minted `tt_` keys (unchanged) or
+  `ttat_` OAuth tokens.
+- Each approval mints a NEW workspace; refresh tokens are how a session
+  keeps its workspace. Re-adding the connector starts clean rather than
+  guessing identity. Recorded limitation, acceptable for onboarding
+  strangers; account linking is future work.
+- `connect_notetaker`/`notetaker_status` tools close the loop in-chat:
+  Composio hosted link out, exact-account status poll back, immediate sync
+  on ACTIVE. Fireflies is web-only over MCP (its native OAuth needs our
+  browser callback) and the tool says so instead of half-working.
+
+**Rejected:** an unauthenticated `sign_up` tool returning a key (keys in
+chat transcripts, no revocation story); requiring the web access gate first
+(kills the one-link share). **Known consequence:** the consent page is a
+public workspace mint. Rate limiting and workspace expiry for abandoned
+empty workspaces are the first hardening steps if the link spreads wide.

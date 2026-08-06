@@ -16,5 +16,11 @@ declare namespace Cloudflare {
     COMPOSIO_FATHOM_AUTH_CONFIG: string
     COMPOSIO_GONG_AUTH_CONFIG: string
     COMPOSIO_FIREFLIES_AUTH_CONFIG: string
+
+    /** Optional founder-dogfood gate. Omit locally; set as a production secret. */
+    TALLTRACK_ACCESS_TOKEN?: string
+
+    /** Local-only demo seed switch. Never set in a deployed environment. */
+    TALLTRACK_DEMO_MODE?: string
   }
 }

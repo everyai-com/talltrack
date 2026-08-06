@@ -45,6 +45,24 @@ npm run dev:web
 The client runs on `:5173` and proxies `/api` to the Worker on `:8787`. Point it
 somewhere else with `TALLTRACK_API_TARGET`.
 
+For a private dogfood deployment, set the access gate as a Worker secret before
+deploying:
+
+```bash
+wrangler secret put TALLTRACK_ACCESS_TOKEN
+```
+
+Leave it unset for local development and tests. The browser then uses a signed,
+HttpOnly session cookie; the access code is never stored in that cookie. The MCP
+surface remains protected by its separate connector key.
+
+Fathom is the first provider TallTrack can read and write from. Gong and
+Fireflies can complete connection, but the UI labels them `connect-only` until
+their transcript adapters pass tests. A write run shows every included call,
+provider sync counts, model, and token receipt. The post card records whether it
+was published, edited before publishing, or rejected; published text becomes a
+future voice example.
+
 ## The gate
 
 ```bash
@@ -67,3 +85,12 @@ missing binding shows up as `undefined` at runtime instead of as a type error.
 | `docs/PLAN.md` | the plan and the reasoning. Read §0 and §4 first. |
 | `docs/STATUS.md` | what's shipped, what's blocked |
 | `docs/DECISIONS.md` | choices made, and alternatives rejected |
+
+## Bake-off corpus
+
+The quality gate is intentionally private and gitignored. Populate
+`corpus/transcripts/` with 10 real calls and `corpus/published/` with 10 posts
+Satya actually published before running `npm run bakeoff generate`; then use
+`pairs` and `score` for blind comparisons. Do not substitute invented examples:
+G1 (7/10), G2 (Satya picks his own work ≤65% across 20 pairs), and G3 (four
+dull calls return zero with a reason) are product gates, not demo metrics.

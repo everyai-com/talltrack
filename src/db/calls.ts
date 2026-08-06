@@ -59,12 +59,12 @@ export async function saveCall(env: Env, workspaceId: string, source: string, ca
 /** Calls in a window, transcripts decrypted, ready for the writer to read whole. */
 export async function loadCalls(env: Env, workspaceId: string, sinceIso: string, limit = 25): Promise<CallInput[]> {
   const { results } = await env.DB.prepare(
-    `select id, title, occurred_at, r2_key from calls
+    `select id, source, title, occurred_at, r2_key from calls
      where workspace_id = ?1 and occurred_at >= ?2
      order by occurred_at desc limit ?3`,
   )
     .bind(workspaceId, sinceIso, limit)
-    .all<Pick<CallRow, 'id' | 'title' | 'occurred_at' | 'r2_key'>>()
+    .all<Pick<CallRow, 'id' | 'source' | 'title' | 'occurred_at' | 'r2_key'>>()
 
   const calls = await Promise.all(
     (results ?? []).map(async (row) => {
@@ -73,6 +73,7 @@ export async function loadCalls(env: Env, workspaceId: string, sinceIso: string,
       const envelope = (await obj.json()) as Envelope
       return {
         id: row.id,
+        source: row.source,
         title: row.title ?? 'Untitled call',
         occurredAt: row.occurred_at,
         transcript: await open(envelope, env.MASTER_KEY),
@@ -80,7 +81,7 @@ export async function loadCalls(env: Env, workspaceId: string, sinceIso: string,
     }),
   )
 
-  return calls.filter((c): c is CallInput => c !== null)
+  return calls.filter((c): boolean => c !== null).map((c) => c as CallInput).filter((c) => c.transcript.trim().length > 0)
 }
 
 /** Delete means delete: the object goes, then the row that points at it. */

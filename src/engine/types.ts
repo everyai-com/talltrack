@@ -55,11 +55,14 @@ export interface Engine {
  * of the prompt (which contains their call transcripts).
  */
 export class EngineError extends Error {
+  readonly kind: 'auth' | 'rate_limit' | 'context_too_large' | 'unavailable' | 'bad_response'
+
   constructor(
-    readonly kind: 'auth' | 'rate_limit' | 'context_too_large' | 'unavailable' | 'bad_response',
+    kind: 'auth' | 'rate_limit' | 'context_too_large' | 'unavailable' | 'bad_response',
     message: string,
   ) {
     super(message)
+    this.kind = kind
     this.name = 'EngineError'
   }
 }
