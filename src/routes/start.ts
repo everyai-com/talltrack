@@ -39,7 +39,8 @@ start.get('/', (c) => {
 <p style="color:#a8a09a;font-size:.95rem;line-height:1.6;margin:0 0 1.6em">One click creates your private workspace and gives you a command to paste into your terminal. After that, everything happens inside Claude: connect your call recorder, and it reads your calls and writes with you.</p>
 <button id="go" style="width:100%;padding:13px 16px;background:#d97757;border:1px solid #d97757;border-radius:8px;color:#1a1210;font:inherit;font-weight:600;font-size:15px;cursor:pointer">Create my workspace</button>
 <div id="out" hidden>
-<p style="color:#a8a09a;font-size:.9rem;margin:1.6em 0 .6em">Paste this in your terminal — it is the only time your key is shown:</p>
+<p style="color:#f0ece7;font-size:.9rem;margin:1.6em 0 .6em">Paste this into the <strong>Terminal app on your computer</strong> — it is the only time your key is shown:</p>
+<p style="color:#a8a09a;font-size:.85rem;line-height:1.5;margin:0 0 .6em">Not into a Claude chat (your key would land in the transcript), and not in a remote or web session (it won't reach your machine). Already added talltrack before? Run <code style="font-family:ui-monospace,monospace">claude mcp remove talltrack</code> first.</p>
 <button id="copy" style="width:100%;text-align:left;background:#1c1917;border:1px solid #2e2926;border-radius:8px;padding:14px;cursor:pointer">
 <code id="cmd" style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#f0ece7;word-break:break-all;white-space:pre-wrap"></code>
 </button>
