@@ -46,6 +46,12 @@ start.get('/', (c) => {
 </button>
 <p id="copied" style="color:#d97757;font-size:.85rem;margin:.6em 0 0" hidden>Copied.</p>
 <p style="color:#a8a09a;font-size:.85rem;line-height:1.55;margin:1.2em 0 0">Then open <code style="font-family:ui-monospace,monospace">claude</code> and say “connect my Fathom”. That's the whole setup.</p>
+<p style="color:#a8a09a;font-size:.9rem;margin:1.8em 0 .6em"><strong style="color:#f0ece7">Using Codex instead?</strong> Same workspace, same key — paste these two lines:</p>
+<button id="copy2" style="width:100%;text-align:left;background:#1c1917;border:1px solid #2e2926;border-radius:8px;padding:14px;cursor:pointer">
+<code id="cmd2" style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#f0ece7;word-break:break-all;white-space:pre-wrap"></code>
+</button>
+<p id="copied2" style="color:#d97757;font-size:.85rem;margin:.6em 0 0" hidden>Copied.</p>
+<p style="color:#a8a09a;font-size:.8rem;line-height:1.5;margin:.8em 0 0">Add the export line to your <code style="font-family:ui-monospace,monospace">~/.zshrc</code> or <code style="font-family:ui-monospace,monospace">~/.bashrc</code> too, so Codex finds the key in future sessions.</p>
 </div>
 <p id="err" style="color:#e8836a;font-size:.9rem;margin-top:1em" hidden></p>
 </div>
@@ -57,12 +63,18 @@ go.addEventListener('click',async()=>{
     const res=await fetch('/start/workspace',{method:'POST'});
     const body=await res.json();
     if(!res.ok){err.textContent=body.error||'That didn’t work. Try again.';err.hidden=false;go.disabled=false;go.textContent='Create my workspace';return}
-    cmd.textContent=body.command;out.hidden=false;go.hidden=true;
+    cmd.textContent=body.command;
+    document.getElementById('cmd2').textContent=body.codexCommand;
+    out.hidden=false;go.hidden=true;
   }catch{err.textContent='Lost the connection. Try again.';err.hidden=false;go.disabled=false;go.textContent='Create my workspace'}
 });
 document.getElementById('copy').addEventListener('click',()=>{
   navigator.clipboard&&navigator.clipboard.writeText(cmd.textContent);
   const c=document.getElementById('copied');c.hidden=false;setTimeout(()=>{c.hidden=true},1600);
+});
+document.getElementById('copy2').addEventListener('click',()=>{
+  navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('cmd2').textContent);
+  const c=document.getElementById('copied2');c.hidden=false;setTimeout(()=>{c.hidden=true},1600);
 });
 </script>`)
 })
@@ -79,5 +91,8 @@ start.post('/workspace', async (c) => {
   return c.json({
     workspaceId,
     command: `claude mcp add talltrack --transport http ${origin}/mcp --header "Authorization: Bearer ${key}"`,
+    // Codex reads the key from an environment variable, never from the config
+    // file — its documented pattern for bearer-token MCP servers.
+    codexCommand: `export TALLTRACK_KEY="${key}"\ncodex mcp add talltrack --url ${origin}/mcp --bearer-token-env-var TALLTRACK_KEY`,
   })
 })
