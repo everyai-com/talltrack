@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.everyai-com/talltrack",
+  "description": "Sales calls in, content worth publishing out — an MCP server that turns your meeting transcripts into posts you'd actually publish.",
+  "repository": {
+    "url": "https://github.com/everyai-com/talltrack",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "websiteUrl": "https://talltrack.everyai-com.workers.dev",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://talltrack.everyai-com.workers.dev/mcp"
+    }
+  ]
+}

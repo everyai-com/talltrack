@@ -63,6 +63,45 @@ provider sync counts, model, and token receipt. The post card records whether it
 was published, edited before publishing, or rejected; published text becomes a
 future voice example.
 
+## Install in your harness
+
+TallTrack exposes a **remote MCP server** at
+`https://talltrack.everyai-com.workers.dev/mcp`. OAuth is discovered
+automatically (`/.well-known/oauth-protected-resource`), or use a minted `tt_…`
+key from the app's Connector panel.
+
+**Claude Code**
+
+```bash
+claude mcp add talltrack --transport http https://talltrack.everyai-com.workers.dev/mcp
+```
+
+For a session that can't open a browser, append a key —
+`--header "Authorization: Bearer tt_…"` (the app's `/start` page hands you the
+exact paste-ready command).
+
+**Codex CLI**
+
+```bash
+export TALLTRACK_KEY="tt_…"
+codex mcp add talltrack --url https://talltrack.everyai-com.workers.dev/mcp --bearer-token-env-var TALLTRACK_KEY
+```
+
+**Cursor** — `.cursor/mcp.json`:
+
+```json
+{ "mcpServers": { "talltrack": { "url": "https://talltrack.everyai-com.workers.dev/mcp" } } }
+```
+
+**VS Code / Copilot** — `.vscode/mcp.json`:
+
+```json
+{ "servers": { "talltrack": { "type": "http", "url": "https://talltrack.everyai-com.workers.dev/mcp" } } }
+```
+
+Harnesses that read `AGENTS.md` (Codex, Cursor, Copilot, Gemini CLI, Zed, Cline,
+Windsurf) load the same product rules from the root [`AGENTS.md`](AGENTS.md).
+
 ## The gate
 
 ```bash
